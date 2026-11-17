@@ -13,6 +13,9 @@ const schema = z
       .enum(["development", "test", "production"])
       .default("development"),
     PORT: z.coerce.number().int().min(1).max(65535).default(4000),
+    HOST: z.enum(["127.0.0.1", "0.0.0.0"]).default("127.0.0.1"),
+    // Enable one hop only behind our loopback-published Nginx upstream.
+    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(1).default(0),
     MONGODB_URI: z
       .string()
       .regex(/^mongodb(?:\+srv)?:\/\//, "Provide a MongoDB connection string"),

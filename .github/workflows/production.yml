@@ -1,0 +1,117 @@
+name: Clipvelto production deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: clipvelto-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  FRONTEND_IMAGE: ghcr.io/mohammadjahid8/clipvelto-frontend
+  BACKEND_IMAGE: ghcr.io/mohammadjahid8/clipvelto-backend
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check deployment configuration
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$VPS_HOST" && test -n "$VPS_PORT" && test -n "$VPS_USER"
+          test -n "$VPS_SSH_KEY" && test -n "$VPS_KNOWN_HOSTS"
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push backend and worker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/backend.dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+            ${{ env.BACKEND_IMAGE }}:latest
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=clipvelto-backend
+          cache-to: type=gha,mode=max,scope=clipvelto-backend
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/frontend.dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+            ${{ env.FRONTEND_IMAGE }}:latest
+          build-args: |
+            API_INTERNAL_URL=http://api:4000
+            GOOGLE_SITE_VERIFICATION=${{ vars.GOOGLE_SITE_VERIFICATION }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=clipvelto-frontend
+          cache-to: type=gha,mode=max,scope=clipvelto-frontend
+      - name: Configure pinned SSH connection
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$VPS_SSH_KEY" && test -n "$VPS_KNOWN_HOSTS"
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$VPS_SSH_KEY" > "$HOME/.ssh/clipvelto"
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/clipvelto" "$HOME/.ssh/known_hosts"
+      - name: Upload Clipvelto deployment files
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+          [[ "$VPS_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          [[ "$VPS_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
+          [[ "$VPS_PORT" =~ ^[0-9]+$ ]]
+          options=(-i "$HOME/.ssh/clipvelto" -P "$VPS_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes)
+          scp "${options[@]}" deploy/compose.yaml "$VPS_USER@$VPS_HOST:/var/www/clipvelto/compose.yaml.next"
+          scp "${options[@]}" deploy/deploy.sh deploy/mongo-*.js deploy/mongo-entrypoint.sh "$VPS_USER@$VPS_HOST:/var/www/clipvelto/"
+      - name: Deploy only the Clipvelto Compose project
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+          IMAGE_TAG: ${{ github.sha }}
+          REGISTRY_DIRECTORY: /var/www/clipvelto/.registry-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          [[ "$VPS_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          [[ "$VPS_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
+          [[ "$VPS_PORT" =~ ^[0-9]+$ ]]
+          connection=(ssh -i "$HOME/.ssh/clipvelto" -p "$VPS_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST")
+          cleanup_registry() {
+            "${connection[@]}" "rm -rf -- '$REGISTRY_DIRECTORY'" || true
+          }
+          trap cleanup_registry EXIT
+          "${connection[@]}" "install -d -m 700 '$REGISTRY_DIRECTORY'"
+          printf '%s' "$GHCR_TOKEN" | "${connection[@]}" "DOCKER_CONFIG='$REGISTRY_DIRECTORY' docker login ghcr.io --username '$GHCR_USER' --password-stdin"
+          "${connection[@]}" "DOCKER_CONFIG='$REGISTRY_DIRECTORY' bash /var/www/clipvelto/deploy.sh '$IMAGE_TAG'"

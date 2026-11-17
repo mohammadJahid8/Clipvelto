@@ -63,14 +63,14 @@ export async function createApp(
     .collection("trial_challenges")
     .createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   app.disable("x-powered-by");
-  app.set("trust proxy", false);
+  app.set("trust proxy", env.TRUST_PROXY_HOPS);
   app.use(helmet());
   app.use((req, res, next) => {
     res.setHeader("Cache-Control", "no-store");
-    // Never trust caller-supplied IP headers. The API binds only to loopback.
-    // Per-client proxy trust must be configured during the deployment phase.
+    // Nginx replaces forwarding headers. Deployment exposes the API only on
+    // host loopback; direct development requests trust no forwarding hops.
     req.headers["x-clipvelto-client-ip"] =
-      req.socket.remoteAddress ?? "127.0.0.1";
+      req.ip ?? req.socket.remoteAddress ?? "127.0.0.1";
     next();
   });
   app.get("/api/health", (_req, res) => {

@@ -171,7 +171,7 @@ export function trialRoutes(
     }
     const created = await trials.create(
       input.data.url,
-      req.socket.remoteAddress ?? "unknown",
+      req.ip ?? req.socket.remoteAddress ?? "unknown",
       cookieToken(req.get("cookie")),
     );
     res.cookie(trialCookie, created.token, {

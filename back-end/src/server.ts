@@ -8,7 +8,7 @@ try {
   const connection = await connectDatabase(env.MONGODB_URI);
   const { app, mailer, uploads, billing } = await createApp(connection, env);
   billing.paddle?.start();
-  const server = app.listen(env.PORT, "127.0.0.1", () =>
+  const server = app.listen(env.PORT, env.HOST, () =>
     logger.info({ port: env.PORT }, "Clipvelto API is ready"),
   );
   server.on("error", () => {

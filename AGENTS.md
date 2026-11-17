@@ -27,7 +27,7 @@ The user authorized free credits (15 source-video minutes), a bounded anonymous 
 ## Later phases (do not implement yet)
 
 5. Real Stripe only after business eligibility is confirmed; verified payment webhooks. Credit packs and simulated payments are authorized now.
-6. VPS deployment; inspect local Invitation Maker deployment configuration first, without modifying that project.
+6. VPS deployment is now authorized on the shared Contabo server. Invitation Maker's local workflow/Compose and live Nginx/container setup have been inspected read-only. Keep that project and its services intact.
 
 ## Landing-page reference
 
@@ -44,3 +44,7 @@ Users cannot cancel submitted uploads, queued imports or processing jobs. Enforc
 ## Paddle integration authorization
 
 The user has now authorized Paddle integration and created live and sandbox accounts. Start with sandbox checkout for the existing one-time packs; preserve test/live wallet separation and production sandbox/mock guards. Live collection must remain off until Paddle approves the account/domain and the owner completes payout/identity setup. Verify raw-body webhook signatures and current Paddle transactions, bind purchases to immutable local orders, and grant credits atomically and once only. Full unused-pack refunds can be reversed automatically; partial refunds, disputes and refunds affecting used/reserved credits must hold new processing for review rather than silently exposing refunded credits. No Stripe integration or deployment is authorized by this change. Continue respecting the instruction not to run build, lint or TSC.
+
+## Current deployment authorization
+
+The user authorized preparing and deploying Clipvelto using the Invitation Maker approach: GitHub Actions builds images, GHCR stores them, SSH deploys Docker Compose, and host Nginx serves HTTPS. Target repository: `mohammadJahid8/Clipvelto`; VPS: `207.244.254.33`; domain: `clipvelto.com`. Use the isolated `clipvelto` Compose project and `/var/www/clipvelto`, loopback ports 3002/4002, separate authenticated MongoDB replica set/Redis and one CPU-limited media worker. Never copy the old project's environment, change its vhosts, stop its containers, globally prune Docker images, or disable SSH host-key validation. Keep production Paddle purchases disabled pending approval and live webhook setup. Keep local sandbox configuration intact. Deployment image compilation belongs in CI; don't run local build, lint or TSC checks.
