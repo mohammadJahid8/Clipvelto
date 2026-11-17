@@ -38,7 +38,7 @@ export function createPaddleBilling(
     provider: "paddle",
     providerEnvironment: environment,
     mode: credits.mode,
-  };
+  } as const;
   let timer: ReturnType<typeof setInterval> | undefined;
   let running: Promise<void> | undefined;
 

@@ -297,7 +297,10 @@ export async function generateClips(
       $set: { clipPlan: checkedPlan },
     });
     if (!planSaved.matchedCount) throw new Error("Cancelled");
-    const clips: Array<Video["clips"][number]> = [];
+    const clips: Array<Pick<Video["clips"][number],
+      "key" | "title" | "start" | "end" | "sizeBytes" |
+      "focusX" | "framingMethod" | "width" | "height"
+    >> = [];
     let trialPreviewKey: string | undefined;
     for (const [index, clip] of (guest
       ? checkedPlan.slice(0, 1)
