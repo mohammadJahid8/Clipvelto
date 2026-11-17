@@ -23,7 +23,8 @@ ENV NODE_ENV=production HOST=0.0.0.0 PORT=4000 \
     YOUTUBE_PYTHON=/opt/media/bin/python FFMPEG_PATH=/usr/bin/ffmpeg \
     FFPROBE_PATH=/usr/bin/ffprobe TMPDIR=/var/tmp/clipvelto \
     OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 MKL_NUM_THREADS=2
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN mkdir -p /var/tmp/clipvelto \
+    && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       ca-certificates ffmpeg fonts-dejavu-core python3 python3-venv libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 COPY back-end/media/requirements.txt /tmp/media-requirements.txt
