@@ -4,7 +4,8 @@ COPY package.json package-lock.json ./
 COPY back-end/package.json ./back-end/package.json
 COPY front-end/package.json ./front-end/package.json
 COPY packages/credit-plans ./packages/credit-plans
-RUN npm ci --workspace @clipvelto/api --include-workspace-root=false
+RUN REDISMS_DISABLE_POSTINSTALL=1 MONGOMS_DISABLE_POSTINSTALL=1 \
+    npm ci --workspace @clipvelto/api --include-workspace-root=false
 COPY back-end/tsconfig*.json ./back-end/
 COPY back-end/src ./back-end/src
 RUN npm run build --workspace @clipvelto/api
