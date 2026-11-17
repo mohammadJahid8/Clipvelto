@@ -151,7 +151,7 @@ export async function transcribeVideo(
       {
         sourceSha256: video.sha256,
         checkpoint: await readTranscriptData(uploads.storage, video, true),
-        recoveryChunkIndex: video.transcriptionFailureChunk,
+        recoveryChunkIndex: video.transcriptionFailureChunk ?? undefined,
         saveCheckpoint: async (checkpoint) => {
           await saveTranscriptData(
             uploads.storage,

@@ -79,11 +79,11 @@ orderSchema.index(
   },
 );
 
-export function billingOrderModel(connection: Connection) {
+export function billingOrderModel(connection: Connection): Model<BillingOrder> {
   return (
     (connection.models.BillingOrder as
       Model<InferSchemaType<typeof orderSchema>> | undefined) ??
-    connection.model("BillingOrder", orderSchema)
+    connection.model<BillingOrder>("BillingOrder", orderSchema)
   );
 }
 export type BillingOrder = InferSchemaType<typeof orderSchema>;

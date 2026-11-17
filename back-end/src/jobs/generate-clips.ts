@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import type { Job } from "bullmq";
 import type { Env } from "../config/env.js";
 import type { UploadService } from "../modules/uploads/upload-service.js";
-import type { createVideoModel } from "../modules/videos/video.model.js";
+import type { createVideoModel, Video } from "../modules/videos/video.model.js";
 import { transcriptSchema } from "../modules/transcription/transcript.js";
 import { transcribe as transcribeConfigured } from "../services/transcriber.js";
 import {
@@ -224,7 +224,7 @@ export async function generateClips(
         {
           sourceSha256: video.sha256!,
           checkpoint: await readTranscriptData(uploads.storage, video, true),
-          recoveryChunkIndex: video.transcriptionFailureChunk,
+          recoveryChunkIndex: video.transcriptionFailureChunk ?? undefined,
           saveCheckpoint: async (checkpoint) => {
             await saveTranscriptData(
               uploads.storage,
@@ -297,7 +297,7 @@ export async function generateClips(
       $set: { clipPlan: checkedPlan },
     });
     if (!planSaved.matchedCount) throw new Error("Cancelled");
-    const clips = [];
+    const clips: Array<Video["clips"][number]> = [];
     let trialPreviewKey: string | undefined;
     for (const [index, clip] of (guest
       ? checkedPlan.slice(0, 1)
@@ -484,7 +484,7 @@ export async function generateClips(
         videoId: video._id.toString(),
         generation: job.data.generation,
         stage,
-        ...(stage === "transcription"
+        ...((stage as ClipStage) === "transcription"
           ? transcriptionFailureDetails(error)
           : {}),
         errorType:
@@ -495,7 +495,7 @@ export async function generateClips(
     const failed = await VideoModel.updateOne(filter, {
       $set: {
         clipStatus: "failed",
-        ...(stage === "transcription"
+        ...((stage as ClipStage) === "transcription"
           ? transcriptionFailureDetails(error)
           : {}),
         mediaExpiresAt: new Date(Date.now() + 86400000),

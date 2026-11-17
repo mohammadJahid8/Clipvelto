@@ -56,7 +56,14 @@ export function createAuth(
                     sub: z.string().min(1),
                     email: z.email().max(254),
                     email_verified: z.literal(true),
-                    name: z.unknown().optional(),
+                    aud: z.string(),
+                    azp: z.string().default(""),
+                    exp: z.number(),
+                    iat: z.number(),
+                    iss: z.string(),
+                    given_name: z.string().default(""),
+                    family_name: z.string().default(""),
+                    name: z.string().default("Creator"),
                     picture: z.unknown().optional(),
                   })
                   .safeParse(claims);
@@ -68,7 +75,6 @@ export function createAuth(
                 );
                 return {
                   user: {
-                    id: profile.data.sub,
                     email: profile.data.email,
                     emailVerified: true,
                     name:
@@ -77,7 +83,7 @@ export function createAuth(
                         : "Creator",
                     image,
                   },
-                  data: { ...claims!, picture: image },
+                  data: { ...profile.data, picture: image ?? "" },
                 };
               },
             },
@@ -94,37 +100,6 @@ export function createAuth(
         allowDifferentEmails: false,
         trustedProviders: [],
         allowUnlinkingAll: false,
-      },
-    },
-    databaseHooks: {
-      account: {
-        // Google is used for identity only. Do not retain Google API credentials.
-        create: {
-          before: async (account) =>
-            account.providerId === "google"
-              ? {
-                  data: {
-                    ...account,
-                    accessToken: undefined,
-                    refreshToken: undefined,
-                    idToken: undefined,
-                  },
-                }
-              : undefined,
-        },
-        update: {
-          before: async (account) =>
-            account.providerId === "google"
-              ? {
-                  data: {
-                    ...account,
-                    accessToken: undefined,
-                    refreshToken: undefined,
-                    idToken: undefined,
-                  },
-                }
-              : undefined,
-        },
       },
     },
     database: mongodbAdapter(connection.db!, {
@@ -225,6 +200,35 @@ export function createAuth(
       cookieCache: { enabled: false },
     },
     databaseHooks: {
+      account: {
+        // Google is used for identity only. Do not retain Google API credentials.
+        create: {
+          before: async (account) =>
+            account.providerId === "google"
+              ? {
+                  data: {
+                    ...account,
+                    accessToken: undefined,
+                    refreshToken: undefined,
+                    idToken: undefined,
+                  },
+                }
+              : undefined,
+        },
+        update: {
+          before: async (account) =>
+            account.providerId === "google"
+              ? {
+                  data: {
+                    ...account,
+                    accessToken: undefined,
+                    refreshToken: undefined,
+                    idToken: undefined,
+                  },
+                }
+              : undefined,
+        },
+      },
       session: {
         create: {
           async after(session) {

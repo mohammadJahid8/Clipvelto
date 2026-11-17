@@ -1,4 +1,4 @@
-import { Schema, type Connection, type Model } from "mongoose";
+import { Schema, type Connection, type Model, type InferSchemaType } from "mongoose";
 
 const legacyAccountSchema = new Schema(
   {
@@ -139,10 +139,10 @@ export function creditModels(connection: Connection) {
     );
   }
   return {
-    Account: model("CreditAccount", legacyAccountSchema),
-    Wallet: model("CreditWallet", walletSchema),
-    Grant: model("CreditGrant", grantSchema),
-    Reservation: model("CreditReservation", reservationSchema),
-    Ledger: model("CreditLedger", ledgerSchema),
+    Account: model<InferSchemaType<typeof legacyAccountSchema>>("CreditAccount", legacyAccountSchema),
+    Wallet: model<InferSchemaType<typeof walletSchema>>("CreditWallet", walletSchema),
+    Grant: model<InferSchemaType<typeof grantSchema>>("CreditGrant", grantSchema),
+    Reservation: model<InferSchemaType<typeof reservationSchema>>("CreditReservation", reservationSchema),
+    Ledger: model<InferSchemaType<typeof ledgerSchema>>("CreditLedger", ledgerSchema),
   };
 }

@@ -78,7 +78,15 @@ export function importRoutes(
     const client = await uploads.queue.backend.client;
     const lock = `${env.UPLOAD_QUEUE_PREFIX}:youtube-quote:${userId}`;
     const token = randomUUID();
-    if ((await client.set(lock, token, "EX", 95, "NX")) !== "OK")
+    client.defineCommand("clipveltoAcquireQuoteLock", {
+      numberOfKeys: 1,
+      lua: "return redis.call('set', KEYS[1], ARGV[1], 'EX', 95, 'NX')",
+    });
+    client.defineCommand("clipveltoReleaseQuoteLock", {
+      numberOfKeys: 1,
+      lua: "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+    });
+    if ((await client.runCommand("clipveltoAcquireQuoteLock", [lock, token])) !== "OK")
       throw new UploadError(
         429,
         "QUOTE_IN_PROGRESS",
@@ -86,13 +94,8 @@ export function importRoutes(
       );
     const globalLock = `${env.UPLOAD_QUEUE_PREFIX}:youtube-quote-capacity`;
     const unlock = (key: string) =>
-      client.eval(
-        "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
-        1,
-        key,
-        token,
-      );
-    if ((await client.set(globalLock, token, "EX", 95, "NX")) !== "OK") {
+      client.runCommand("clipveltoReleaseQuoteLock", [key, token]);
+    if ((await client.runCommand("clipveltoAcquireQuoteLock", [globalLock, token])) !== "OK") {
       await unlock(lock);
       throw new UploadError(
         429,

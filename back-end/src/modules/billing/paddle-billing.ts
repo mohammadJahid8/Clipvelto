@@ -1,5 +1,5 @@
 import type { Connection } from "mongoose";
-import { ApiError } from "@paddle/paddle-node-sdk";
+import { ApiError, type Adjustment } from "@paddle/paddle-node-sdk";
 import { z } from "zod";
 import type { Env } from "../../config/env.js";
 import type { CreditService } from "../credits/credit-service.js";
@@ -71,7 +71,7 @@ export function createPaddleBilling(
     }).lean();
     // Ignore transactions for other products in the same Paddle account.
     if (!selected) return;
-    const adjustments = [];
+    const adjustments: Adjustment[] = [];
     const collection = client.adjustments.list({
       transactionId: [transactionId],
       perPage: 50,
