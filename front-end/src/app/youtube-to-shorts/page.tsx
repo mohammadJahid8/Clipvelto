@@ -7,7 +7,6 @@ export const metadata = publicMetadata({
   title: workflow.title,
   description: workflow.description,
   path: `/${workflow.slug}`,
-  image: `/og/${workflow.slug}`,
 });
 export default function Page() {
   return <WorkflowPage workflow={workflow} />;

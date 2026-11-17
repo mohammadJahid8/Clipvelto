@@ -6,7 +6,6 @@ export const metadata = publicMetadata({
   description:
     "How Clipvelto collects, processes, stores and protects account information, videos and contact messages.",
   path: "/privacy",
-  image: "/og/privacy",
 });
 export default function PrivacyPage() {
   return (

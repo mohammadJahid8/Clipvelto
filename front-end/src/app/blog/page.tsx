@@ -13,7 +13,6 @@ export const metadata = publicMetadata({
   description:
     "Practical video editing and publishing guides, podcast and webinar clip ideas, and GTA 6 stories with real photographs and official sources.",
   path: "/blog",
-  image: "/og/creator-guides",
 });
 
 export default function BlogPage() {

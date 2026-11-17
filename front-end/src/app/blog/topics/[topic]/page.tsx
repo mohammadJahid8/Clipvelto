@@ -21,7 +21,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${current.title}: articles and guides`,
     description: current.description,
     path: `/blog/topics/${current.slug}`,
-    image: `/og/topic-${current.slug}`,
   });
 }
 export default async function TopicPage({ params }: Props) {

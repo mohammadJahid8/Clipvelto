@@ -9,26 +9,26 @@ export const site = {
 
 export const absoluteUrl = (path = "/") => new URL(path, site.url).toString();
 
+export const sharingImage = {
+  url: absoluteUrl("/opengraph-image.png?v=2"),
+  width: 1200,
+  height: 630,
+  type: "image/png",
+  alt: "Clipvelto — Video to shorts",
+};
+
 export function publicMetadata({
   title,
   description,
   path,
-  image = "/opengraph-image.png",
   article,
 }: {
   title: string;
   description: string;
   path: string;
-  image?: string;
   article?: { published: string; modified: string; section: string };
 }): Metadata {
   const fullTitle = `${title} | ${site.name}`;
-  const socialImage = {
-    url: absoluteUrl(image),
-    width: 1200,
-    height: 630,
-    alt: title,
-  };
   return {
     title: { absolute: fullTitle },
     description,
@@ -40,7 +40,7 @@ export function publicMetadata({
       url: absoluteUrl(path),
       siteName: site.name,
       locale: "en_US",
-      images: [socialImage],
+      images: [sharingImage],
       ...(article && {
         publishedTime: article.published,
         modifiedTime: article.modified,
@@ -52,7 +52,7 @@ export function publicMetadata({
       card: "summary_large_image",
       title: fullTitle,
       description,
-      images: [socialImage],
+      images: [sharingImage],
     },
   };
 }

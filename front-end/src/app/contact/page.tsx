@@ -7,7 +7,6 @@ export const metadata = publicMetadata({
   description:
     "Contact the Clipvelto administrator about your account, videos, credits or a privacy request.",
   path: "/contact",
-  image: "/og/contact",
 });
 export default function ContactPage() {
   return (

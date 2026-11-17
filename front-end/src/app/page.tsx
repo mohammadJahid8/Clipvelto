@@ -14,7 +14,6 @@ export const metadata = publicMetadata({
   description:
     "Find highlights in your YouTube recordings and video uploads. Create vertical, square or horizontal MP4 clips with optional captions. Start with 15 free credits.",
   path: "/",
-  image: "/og/home",
 });
 
 export default async function HomePage() {

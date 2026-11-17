@@ -29,7 +29,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: post.title,
     description: post.description,
     path: `/blog/${post.slug}`,
-    image: `/og/${post.slug}`,
     article: {
       published: post.published,
       modified: post.modified,
@@ -71,7 +70,6 @@ export default async function ArticlePage({ params }: Props) {
               ...post.sections.flatMap((section) =>
                 section.image ? [absoluteUrl(section.image.src)] : [],
               ),
-              absoluteUrl(`/og/${post.slug}`),
             ]),
           ],
           datePublished: post.published,

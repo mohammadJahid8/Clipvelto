@@ -4,7 +4,7 @@ import "./globals.css";
 import "@/styles/billing.css";
 import "@/styles/public-pages.css";
 import "@/styles/editorial.css";
-import { absoluteUrl, site } from "@/lib/seo";
+import { absoluteUrl, sharingImage, site } from "@/lib/seo";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -46,27 +46,13 @@ export const metadata: Metadata = {
     siteName: "Clipvelto",
     locale: "en_US",
     type: "website",
-    images: [
-      {
-        url: "/og/home",
-        width: 1200,
-        height: 630,
-        alt: "Clipvelto — Long videos. Great moments. Better shorts.",
-      },
-    ],
+    images: [sharingImage],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
-    images: ["/og/home"],
-  },
-  icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "32x32" },
-    ],
-    apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
+    images: [sharingImage],
   },
 };
 
@@ -89,6 +75,12 @@ const structuredData = {
       "@id": absoluteUrl("/#organization"),
       name: site.name,
       url: site.url,
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl("/logo.svg"),
+        width: 64,
+        height: 64,
+      },
     },
     {
       "@type": "WebSite",

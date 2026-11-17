@@ -6,7 +6,6 @@ export const metadata = publicMetadata({
   description:
     "Terms for using Clipvelto, processing recordings, using credits and accessing generated clips.",
   path: "/terms",
-  image: "/og/terms",
 });
 export default function TermsPage() {
   return (
