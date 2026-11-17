@@ -1,0 +1,124 @@
+import type { Metadata, Viewport } from "next";
+import { DM_Sans, Space_Grotesk } from "next/font/google";
+import "./globals.css";
+import "@/styles/billing.css";
+import "@/styles/public-pages.css";
+import "@/styles/editorial.css";
+import { absoluteUrl, site } from "@/lib/seo";
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: "swap",
+});
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
+const title = "Clipvelto — Turn Long Videos into Shorts";
+const description =
+  "Turn long videos into clips with Clipvelto. Choose vertical, horizontal or square, add optional captions, and download MP4s. Start with 15 free minutes.";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(site.url),
+  title,
+  description,
+  applicationName: "Clipvelto",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
+  openGraph: {
+    title,
+    description,
+    url: "/",
+    siteName: "Clipvelto",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/og/home",
+        width: 1200,
+        height: 630,
+        alt: "Clipvelto — Long videos. Great moments. Better shorts.",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: ["/og/home"],
+  },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "32x32" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf8" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0f14" },
+  ],
+};
+
+// Runs before the first paint; storage failure falls back to the system preference.
+const themeScript = `(function(){var t='system';try{t=localStorage.getItem('clipvelto-theme')||'system'}catch(e){}var dark=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=dark?'dark':'light';document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute('content',dark?'#0c0f14':'#fafaf8')})})()`;
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": absoluteUrl("/#organization"),
+      name: site.name,
+      url: site.url,
+    },
+    {
+      "@type": "WebSite",
+      "@id": absoluteUrl("/#website"),
+      name: site.name,
+      url: site.url,
+      description,
+      publisher: { "@id": absoluteUrl("/#organization") },
+      inLanguage: "en",
+    },
+  ],
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="en" id="top" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+          }}
+        />
+      </head>
+      <body className={`${dmSans.variable} ${spaceGrotesk.variable}`}>
+        {children}
+      </body>
+    </html>
+  );
+}
