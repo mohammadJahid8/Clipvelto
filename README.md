@@ -509,3 +509,14 @@ Clipvelto is deployed at https://clipvelto.com using GitHub Actions, GHCR images
 - SMTP connection, TLS and authentication succeeded from the production API container. Inbox delivery should be checked through an actual signup/OTP or contact submission.
 - Production starts with a fresh database and live wallet mode. Local users, test purchases and media records were not migrated. Administrator access was granted and verified for the owner’s confirmed, verified production account, with an audit entry.
 - Paddle live payments remain disabled pending approval and live credentials/webhooks. Backups/offsite retention, restore verification and alerting still need operational setup. No full paid processing job, live-stream capture or physical iOS test was run during deployment. No local build, lint or standalone TypeScript checks were run; Docker image compilation ran in GitHub as part of deployment.
+
+
+### Brand and sharing images
+
+Open Graph and Twitter share one static 1200 × 630 PNG (8,396 bytes), using the existing lime play mark, Clipvelto name and “Video to shorts” description on a dark background. Metadata points directly to the asset with a versioned URL; previously shared `/og/…` URLs redirect to it. Favicons contain 16/32/48px variants, and the Apple icon is 180px. Next.js file metadata supplies the icon tags. Regenerate the assets with `node scripts/generate-brand-assets.mjs` after an intentional logo change. Article photos remain in the articles and their structured data.
+
+### Email delivery — Resend
+
+Production and the private local backend configuration now use Resend through the existing Nodemailer SMTP transport. `clipvelto.com` is verified with Resend's prescribed DKIM/sending DNS records and a monitoring DMARC record. The sending-only key is restricted to this domain and is held only in private environment files. No additional email SDK or public credential was added.
+
+Use `MAIL_TRANSPORT=smtp`, `MAIL_FROM=Clipvelto <no-reply@clipvelto.com>`, `SMTP_HOST=smtp.resend.com`, `SMTP_PORT=587`, `SMTP_USER=resend`, and the restricted Resend key as `SMTP_PASSWORD`. Contact submissions continue to go to the configured administrator recipient; the submitter's address stays in Reply-To. The production API was restarted with these settings, and an approved setup email sent through the application's mail service was marked Delivered in Resend. Restart a previously running local backend to pick up the local environment change.
