@@ -14,6 +14,7 @@ const importFailureSchema = z.object({
     "UNAVAILABLE",
     "ACCESS_DENIED",
     "BOT_CHECK",
+    "SESSION_UNAVAILABLE",
     "TIMEOUT",
     "IMPORT_FAILED",
     "MEDIA_CAPACITY",
@@ -54,6 +55,8 @@ export class YoutubeImportError extends Error {
         "YouTube blocked the download. Try again later or upload the recording from your device.",
       BOT_CHECK:
         "YouTube is blocking imports from our server with a human verification check. Upload the recording from your device, or try again later.",
+      SESSION_UNAVAILABLE:
+        "The server’s YouTube session is unavailable. Ask the administrator to check its private session file.",
       TIMEOUT:
         "The YouTube download timed out. Retry the import or upload your own recording.",
       IMPORT_FAILED:
@@ -75,6 +78,7 @@ export class YoutubeImportError extends Error {
       "NOT_READY",
       "ACCESS_DENIED",
       "BOT_CHECK",
+      "SESSION_UNAVAILABLE",
       "TIMEOUT",
       "IMPORT_FAILED",
       "MEDIA_CAPACITY",
@@ -148,6 +152,9 @@ export async function importYoutube(
         String(previewSeconds),
         ...(approve ? ["--require-credit"] : []),
         ...(metadataOnly ? ["--metadata-only"] : []),
+        ...(env.YOUTUBE_COOKIES_FILE
+          ? ["--cookies-file", env.YOUTUBE_COOKIES_FILE]
+          : []),
       ],
       {
         signal: active,

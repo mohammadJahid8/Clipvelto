@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 import sys
 import time
@@ -17,6 +18,45 @@ class ImportFailure(Exception):
         super().__init__(code)
 
 
+def copy_youtube_session(source, directory):
+    """Use a private per-job copy; never rewrite the mounted account session."""
+    try:
+        # Session files are administrator-provided secrets, never browser input.
+        # Refuse symlinks, shared-readable files and oversized cookie exports.
+        fd = os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(fd, "rb") as session:
+            info = os.fstat(session.fileno())
+            if (not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077
+                    or info.st_size > 1024 * 1024):
+                raise ValueError("Invalid session file")
+            content = session.read(1024 * 1024 + 1)
+        if len(content) > 1024 * 1024:
+            raise ValueError("Session file exceeds limit")
+        content = content.decode("utf-8")
+        if not content.startswith((
+                "# Netscape HTTP Cookie File", "# HTTP Cookie File")):
+            raise ValueError("Expected a Netscape cookie file")
+        rows = ["# Netscape HTTP Cookie File"]
+        for line in content.splitlines():
+            if not line or (line.startswith("#") and not line.startswith("#HttpOnly_")):
+                continue
+            fields = line.split("\t")
+            if len(fields) != 7:
+                raise ValueError("Invalid cookie row")
+            domain = fields[0].removeprefix("#HttpOnly_").lstrip(".").lower()
+            # Never pass unrelated Google/Gmail or other sites' sessions along.
+            if domain == "youtube.com" or domain.endswith(".youtube.com"):
+                rows.append(line)
+        if len(rows) == 1:
+            raise ValueError("No YouTube cookies")
+        target = directory / "youtube-session.txt"
+        with os.fdopen(os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as copy:
+            copy.write("\n".join(rows) + "\n")
+        return str(target)
+    except (OSError, ValueError):
+        raise ImportFailure("SESSION_UNAVAILABLE") from None
+
+
 def main():
     parser = argparse.ArgumentParser()
     for name in ("id", "directory", "ffmpeg", "node"):
@@ -26,6 +66,7 @@ def main():
     parser.add_argument("--preview-seconds", type=int, default=0)
     parser.add_argument("--metadata-only", action="store_true")
     parser.add_argument("--require-credit", action="store_true")
+    parser.add_argument("--cookies-file")
     args = parser.parse_args()
     if args.preview_seconds not in (0, 180):
         raise ValueError("Invalid preview window")
@@ -58,6 +99,8 @@ def main():
                "progress_hooks": [progress], "restrictfilenames": True,
                "postprocessor_args": {"ffmpeg": ["-threads", "2"]},
                "cachedir": False}
+    if args.cookies_file:
+        options["cookiefile"] = copy_youtube_session(args.cookies_file, directory)
     with yt_dlp.YoutubeDL(options) as downloader:
         info = downloader.extract_info(url, download=False)
         if info.get("id") != args.id or info.get("_type") in ("playlist", "multi_video"):
@@ -154,7 +197,7 @@ def main():
                 # A recording can expose a format whose CDN requests return 403.
                 # Try one freshly extracted alternative transport, not an endless
                 # retry of the same rejected media URL. Access requirements stay
-                # unchanged: no cookies, account impersonation or proxy rotation.
+                # unchanged; reuse only the configured administrator session.
                 if "403" not in str(error):
                     raise
                 was_hls = any(str(fmt.get("protocol", "")).startswith("m3u8") for fmt in formats)

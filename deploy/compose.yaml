@@ -19,6 +19,7 @@ x-app: &app
     MKL_NUM_THREADS: 2
   volumes:
     - media-temp:/var/tmp/clipvelto
+    - ./youtube-session:/run/clipvelto-youtube:ro
   read_only: true
   tmpfs:
     - /tmp:size=64m,mode=1777

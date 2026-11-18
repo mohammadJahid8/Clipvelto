@@ -7,6 +7,7 @@ exec 9>.deployment.lock
 flock -w 300 9
 export IMAGE_TAG="$image_tag"
 test -s backend.env && test -s frontend.env && test -s mongo.env && test -s redis.env
+install -d -o 1000 -g 1000 -m 700 youtube-session
 docker compose -f compose.yaml.next config --quiet
 docker compose -f compose.yaml.next pull
 # Keep the previous app/config reference for a deliberate rollback; never

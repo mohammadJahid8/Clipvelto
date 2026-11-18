@@ -141,6 +141,7 @@ const schema = z
       .enum(["true", "false"])
       .default("false")
       .transform((v) => v === "true"),
+    YOUTUBE_COOKIES_FILE: optionalSecret,
     YOUTUBE_PYTHON: z
       .string()
       .default(
