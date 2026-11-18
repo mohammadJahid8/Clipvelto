@@ -3,6 +3,12 @@ name: Clipvelto production deployment
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - back-end/browser-session/**
+      - deploy/youtube-browser*
+      - .github/workflows/youtube-browser.yml
+      - README.md
+      - AGENTS.md
   workflow_dispatch:
 
 concurrency:

@@ -1,0 +1,86 @@
+name: Clipvelto private YouTube browser
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - back-end/browser-session/**
+      - deploy/youtube-browser*
+      - .github/workflows/youtube-browser.yml
+  workflow_dispatch:
+
+concurrency:
+  group: clipvelto-youtube-browser
+  cancel-in-progress: false
+permissions:
+  contents: read
+  packages: write
+env:
+  BROWSER_IMAGE: ghcr.io/mohammadjahid8/clipvelto-youtube-browser
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish private browser image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/youtube-browser.dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.BROWSER_IMAGE }}:${{ github.sha }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=clipvelto-youtube-browser
+          cache-to: type=gha,mode=max,scope=clipvelto-youtube-browser
+      - name: Configure pinned SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/clipvelto"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/clipvelto" "$HOME/.ssh/known_hosts"
+      - name: Deploy isolated browser container
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+          IMAGE_TAG: ${{ github.sha }}
+          REGISTRY_DIRECTORY: /var/www/clipvelto/.browser-registry-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$VPS_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          [[ "$VPS_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
+          [[ "$VPS_PORT" =~ ^[0-9]+$ ]]
+          ssh_options=(-i "$HOME/.ssh/clipvelto" -p "$VPS_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes)
+          scp_options=(-i "$HOME/.ssh/clipvelto" -P "$VPS_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes)
+          target="$VPS_USER@$VPS_HOST"
+          scp "${scp_options[@]}" deploy/youtube-browser.compose.yaml deploy/youtube-browser-seccomp.json "$target:/var/www/clipvelto/"
+          ssh "${ssh_options[@]}" "$target" "install -d -m 700 '$REGISTRY_DIRECTORY'"
+          cleanup() { ssh "${ssh_options[@]}" "$target" "rm -rf -- '$REGISTRY_DIRECTORY'" || true; }
+          trap cleanup EXIT
+          printf '%s' "$REGISTRY_TOKEN" | ssh "${ssh_options[@]}" "$target" "DOCKER_CONFIG='$REGISTRY_DIRECTORY' docker login ghcr.io --username '$REGISTRY_USER' --password-stdin"
+          ssh "${ssh_options[@]}" "$target" "bash -s '$IMAGE_TAG' '$REGISTRY_DIRECTORY'" <<'REMOTE'
+          set -euo pipefail
+          cd /var/www/clipvelto
+          exec 9>.deployment.lock
+          flock -w 300 9
+          export IMAGE_TAG="$1" DOCKER_CONFIG="$2"
+          install -d -o 1000 -g 1000 -m 700 youtube-browser-profile youtube-session
+          docker compose -f youtube-browser.compose.yaml pull
+          docker compose -f youtube-browser.compose.yaml up -d --wait --wait-timeout 120
+          printf '%s\n' "$IMAGE_TAG" > .youtube-browser-image-tag
+          REMOTE
