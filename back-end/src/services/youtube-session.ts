@@ -20,7 +20,7 @@ type Incident = {
   fingerprint: string;
   blocked: boolean;
   incidentId: string;
-  reason: "BOT_CHECK" | "SESSION_UNAVAILABLE";
+  reason: "BOT_CHECK" | "SESSION_UNAVAILABLE" | "SESSION_EXPIRED";
   blockedAt: Date;
   lastSuccessAt?: Date;
   nextAlertAt: Date;
@@ -95,7 +95,7 @@ export function createYoutubeSessionMonitor(
       return result;
     } catch (error) {
       if (error instanceof YoutubeImportError &&
-          (error.details.code === "BOT_CHECK" || error.details.code === "SESSION_UNAVAILABLE")) {
+          (error.details.code === "BOT_CHECK" || error.details.code === "SESSION_UNAVAILABLE" || error.details.code === "SESSION_EXPIRED")) {
         await block(fingerprint, error.details.code);
         throw new YoutubeSessionPaused();
       }

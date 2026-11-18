@@ -81,6 +81,13 @@ test("unavailable individual videos do not pause the service", async () => {
   assert.equal(messages.length, 0);
 });
 
+test("an explicit expired-session signal pauses imports before anonymous fallback", async () => {
+  await assert.rejects(monitor.run(async () => { throw new YoutubeImportError({ code: "SESSION_EXPIRED" }, 1024); }), YoutubeSessionPaused);
+  await assert.rejects(monitor.assertAvailable(), YoutubeSessionPaused);
+  await monitor.notify();
+  assert.equal(messages.length, 1);
+});
+
 test("a replaced export allows retry; a stale success cannot clear a new challenge", async () => {
   let finish!: () => void;
   let started!: () => void;

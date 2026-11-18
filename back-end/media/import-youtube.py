@@ -18,6 +18,21 @@ class ImportFailure(Exception):
         super().__init__(code)
 
 
+class ImportLogger:
+    def debug(self, _message):
+        pass
+
+    def error(self, _message):
+        pass
+
+    def warning(self, message):
+        # Act on the known account-session warning without persisting its text.
+        text = str(message).lower()
+        if "youtube account cookies" in text and (
+                "no longer valid" in text or "expired" in text):
+            raise ImportFailure("SESSION_EXPIRED")
+
+
 def copy_youtube_session(source, directory):
     """Use a private per-job copy; never rewrite the mounted account session."""
     try:
@@ -86,7 +101,7 @@ def main():
         if sum(p.stat().st_size for p in directory.iterdir() if p.is_file()) > args.max_bytes:
             raise ImportFailure("SIZE_LIMIT")
 
-    options = {"noplaylist": True, "quiet": True, "no_warnings": True,
+    options = {"noplaylist": True, "quiet": True, "logger": ImportLogger(),
                # quiet suppresses normal messages, but download progress still
                # writes to stdout unless explicitly disabled. Results are files.
                "noprogress": True,

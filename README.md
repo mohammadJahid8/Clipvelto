@@ -284,7 +284,7 @@ Recreate only the Clipvelto API and worker after enabling or disabling that envi
 
 ### YouTube session outage handling
 
-Real import/quote requests detect YouTube bot challenges or an unavailable private session file. The API and worker share a persisted outage record; no extra YouTube polling requests are generated. New homepage trials, workspace imports, quotes and import retries receive a temporary-unavailability response before creating new reservations or consuming trial allowance. Individual unavailable/private videos and ordinary download errors do not automatically pause every import.
+Real import/quote requests detect YouTube bot challenges, explicit expired/rotated-cookie warnings, or an unavailable private session file. The API and worker share a persisted outage record; no extra YouTube polling requests are generated. New homepage trials, workspace imports, quotes and import retries receive a temporary-unavailability response before creating new reservations or consuming trial allowance. Individual unavailable/private videos and ordinary download errors do not automatically pause every import.
 
 Submitted imports stay queued and release their credit reservations atomically. While the same session remains blocked, the worker checks the saved outage state every five minutes without making another YouTube request. Device uploads and processing of already imported media continue. After a new YouTube-only export replaces the private cookie file, queued imports can retry automatically without an API/worker restart, still subject to normal credit, ownership and retention checks. A successful request with that replacement closes the outage. Trial jobs still expire after 24 hours; other media retain their configured expiry.
 
