@@ -38,10 +38,19 @@ async def main():
     os.umask(0o077)
     ROOT.mkdir(mode=0o700, exist_ok=True)
     PROFILE.mkdir(mode=0o700, exist_ok=True)
+    # Container hostnames/PIDs can change after recreation. Only discard Chrome's
+    # stale singleton artifacts after claiming exclusive ownership of the profile.
+    profile_lock = os.open(PROFILE / "service.lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    fcntl.flock(profile_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    for name in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
+        (PROFILE / name).unlink(missing_ok=True)
     lock_fd = os.open(SESSION.with_name("browser.lock"), os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     status("starting")
     display = child(["Xvfb", ":99", "-screen", "0", "1280x800x24", "-nolisten", "tcp"])
-    await asyncio.sleep(1)
+    for _ in range(100):
+        if Path("/tmp/.X11-unix/X99").exists():
+            break
+        await asyncio.sleep(0.1)
     child(["fluxbox"])
     # Chrome runs as uid 1000 with its sandbox enabled. CDP is container-local;
     # neither its debugging port nor raw VNC are published on the VPS.
