@@ -547,3 +547,16 @@ test("discount approvals cannot cross accounts, packs, expiry or amount, or fund
   assert.equal((await credits.summary("alice")).available, 135);
   assert.equal((await credits.summary("bob")).available, 15);
 });
+
+test("an abandoned discounted checkout does not hold the account after another order redeems the code", async () => {
+  const id = await approveDiscount(85);
+  const abandoned = await billing.create("alice", "starter", randomUUID());
+  const paid = await billing.create("alice", "starter", randomUUID());
+  rawTransactions.get(abandoned.paddleTransactionId!)!.discount_id = id;
+  discounted(paid.paddleTransactionId!, id, 85);
+  await event(paid.paddleTransactionId!);
+  await event(abandoned.paddleTransactionId!);
+  assert.equal((await billing.Order.findById(abandoned._id))?.status, "pending");
+  assert.equal(await billing.holds.active("alice"), false);
+  assert.equal((await credits.summary("alice")).available, 135);
+});

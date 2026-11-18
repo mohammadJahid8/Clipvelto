@@ -103,10 +103,6 @@ export function createPaddleBilling(
               _id: `${environment}:${transaction.discountId}`,
               userIds: order.userId,
               priceId: order.paddlePriceId,
-              $or: [
-                { redeemedOrderId: { $exists: false } },
-                { redeemedOrderId: order._id },
-              ],
             },
             { session },
           )
@@ -115,7 +111,9 @@ export function createPaddleBilling(
       const approvedDiscount =
         approval &&
         (transaction.status !== "completed" ||
-          (Number.isFinite(billedAt.getTime()) && billedAt <= approval.expiresAt))
+          (Number.isFinite(billedAt.getTime()) &&
+            billedAt <= approval.expiresAt &&
+            (!approval.redeemedOrderId || approval.redeemedOrderId === order._id)))
           ? { id: approval.discountId, percent: approval.percent }
           : undefined;
       await credits.ensureWallet(order.userId, session);
