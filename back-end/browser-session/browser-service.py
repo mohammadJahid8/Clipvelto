@@ -1,5 +1,6 @@
 """Dedicated headed Chrome profile with bounded, private YouTube session syncing."""
 import asyncio
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -37,6 +38,7 @@ async def main():
     os.umask(0o077)
     ROOT.mkdir(mode=0o700, exist_ok=True)
     PROFILE.mkdir(mode=0o700, exist_ok=True)
+    lock_fd = os.open(SESSION.with_name("browser.lock"), os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     status("starting")
     display = child(["Xvfb", ":99", "-screen", "0", "1280x800x24", "-nolisten", "tcp"])
     await asyncio.sleep(1)
@@ -83,6 +85,12 @@ async def main():
                 status("login-view-stopped")
                 raise RuntimeError("Private login viewer stopped")
             try:
+                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                status("import-in-progress", publishedAt=published_at or None)
+                await asyncio.sleep(10)
+                continue
+            try:
                 if browser is None or not browser.is_connected():
                     browser = await playwright.chromium.connect_over_cdp("http://127.0.0.1:9222", timeout=10000)
                 context = browser.contexts[0]
@@ -121,6 +129,8 @@ async def main():
                 # they may contain login/account data. Existing export is preserved.
                 status("browser-check-retrying", publishedAt=published_at or None)
                 browser = None
+            finally:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
             await asyncio.sleep(10)
 
 

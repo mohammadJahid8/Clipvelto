@@ -1,5 +1,7 @@
 """Download one permitted YouTube recording or bounded capture of an active live."""
 import argparse
+from contextlib import contextmanager
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -16,6 +18,32 @@ class ImportFailure(Exception):
         self.code = code
         self.details = details
         super().__init__(code)
+
+
+@contextmanager
+def browser_session_guard():
+    """Let imports finish before the browser deliberately refreshes its session."""
+    if "--cookies-file" not in sys.argv:
+        yield
+        return
+    source = Path(sys.argv[sys.argv.index("--cookies-file") + 1])
+    try:
+        fd = os.open(source.with_name("browser.lock"), os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except FileNotFoundError:
+        # Ordinary manually exported sessions do not need this integration.
+        yield
+        return
+    except OSError:
+        raise ImportFailure("SESSION_UNAVAILABLE") from None
+    with os.fdopen(fd, "rb") as lock:
+        info = os.fstat(lock.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077:
+            raise ImportFailure("SESSION_UNAVAILABLE")
+        fcntl.flock(lock, fcntl.LOCK_SH)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 class ImportLogger:
@@ -255,7 +283,8 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        with browser_session_guard():
+            main()
     except Exception as error:
         # Only bounded, allowlisted diagnostics cross the process boundary.
         # Never save provider errors, signed media URLs or request headers.

@@ -1,4 +1,7 @@
 import json
+import fcntl
+import importlib.util
+import sys
 import os
 from pathlib import Path
 import tempfile
@@ -47,6 +50,29 @@ class PrivateSessionTests(unittest.TestCase):
             self.assertIsNone(access.lookup("private-fixture"))
             target.unlink()
             self.assertIsNone(access.lookup("private-fixture"))
+
+    def test_import_holds_browser_refresh_until_it_finishes(self):
+        spec = importlib.util.spec_from_file_location("import_youtube", Path(__file__).parents[1] / "media/import-youtube.py")
+        importer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(importer)
+        before = sys.argv
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "cookies.txt"
+                lock = path.with_name("browser.lock")
+                lock.touch(mode=0o600)
+                sys.argv = ["import-youtube.py", "--cookies-file", str(path)]
+                fd = os.open(lock, os.O_RDWR)
+                try:
+                    with importer.browser_session_guard():
+                        with self.assertRaises(BlockingIOError):
+                            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    fcntl.flock(fd, fcntl.LOCK_UN)
+                finally:
+                    os.close(fd)
+        finally:
+            sys.argv = before
 
 
 if __name__ == "__main__":
