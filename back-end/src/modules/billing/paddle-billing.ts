@@ -97,7 +97,7 @@ export function createPaddleBilling(
         ...scope,
       }).session(session);
       if (!order) return;
-      const approval = transaction.discountId
+      const approval = transaction.discountId && order.paddlePriceId
         ? await discounts.findOne(
             {
               _id: `${environment}:${transaction.discountId}`,
@@ -167,6 +167,8 @@ export function createPaddleBilling(
           transaction.status === "completed" &&
           !["paid", "refunded", "review"].includes(order.status)
         ) {
+          const totals = transaction.details?.totals;
+          if (!totals) throw new Error("Completed payment is missing totals");
           if (approval)
             await discounts.updateOne(
               { _id: approval._id },
@@ -174,8 +176,8 @@ export function createPaddleBilling(
               { session },
             );
           order.appliedDiscountId = transaction.discountId ?? undefined;
-          order.discountCents = Number(transaction.details!.totals.discount);
-          order.paidTotalCents = Number(transaction.details!.totals.total);
+          order.discountCents = Number(totals.discount);
+          order.paidTotalCents = Number(totals.total);
           await credits.grantPurchase(
             order.userId,
             order._id,
