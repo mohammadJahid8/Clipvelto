@@ -13,6 +13,7 @@ const importFailureSchema = z.object({
     "NOT_READY",
     "UNAVAILABLE",
     "ACCESS_DENIED",
+    "BOT_CHECK",
     "TIMEOUT",
     "IMPORT_FAILED",
     "MEDIA_CAPACITY",
@@ -51,6 +52,8 @@ export class YoutubeImportError extends Error {
         "This video is unavailable or requires access. Use a public video you have permission to process, or upload your own file.",
       ACCESS_DENIED:
         "YouTube blocked the download. Try again later or upload the recording from your device.",
+      BOT_CHECK:
+        "YouTube is blocking imports from our server with a human verification check. Upload the recording from your device, or try again later.",
       TIMEOUT:
         "The YouTube download timed out. Retry the import or upload your own recording.",
       IMPORT_FAILED:
@@ -65,11 +68,13 @@ export class YoutubeImportError extends Error {
         "The download tool produced too much diagnostic output and was stopped. Ask the administrator to check the importer configuration.",
     };
     super(messages[details.code]);
+    this.name = "YoutubeImportError";
   }
   get retryable() {
     return [
       "NOT_READY",
       "ACCESS_DENIED",
+      "BOT_CHECK",
       "TIMEOUT",
       "IMPORT_FAILED",
       "MEDIA_CAPACITY",

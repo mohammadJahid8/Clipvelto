@@ -15,6 +15,7 @@ import { uploadRoutes } from "./modules/uploads/upload-routes.js";
 import { UploadError } from "./modules/uploads/upload-error.js";
 import { transcriptionRoutes } from "./modules/transcription/transcription-routes.js";
 import { importRoutes } from "./modules/imports/import-routes.js";
+import { YoutubeImportError } from "./services/youtube-importer.js";
 import { clipRoutes } from "./modules/clips/clip-routes.js";
 import {
   createCreditService,
@@ -222,6 +223,21 @@ export async function createApp(
     res,
     _next,
   ) => {
+    if (error instanceof YoutubeImportError) {
+      // Only allowlisted importer details reach clients/logs, never provider
+      // output containing signed download URLs or request headers.
+      logger.warn(
+        { reason: error.details.code },
+        "YouTube request failed; provider content omitted",
+      );
+      res.status(error.retryable ? 503 : 422).json({
+        error: {
+          code: `YOUTUBE_${error.details.code}`,
+          message: error.message,
+        },
+      });
+      return;
+    }
     if (error instanceof UploadError) {
       res
         .status(error.status)

@@ -206,7 +206,9 @@ if __name__ == "__main__":
             code, details = error.code, error.details
         else:
             message = str(error).lower()
-            if "403" in message or "sign in" in message or "denied access" in message:
+            if "not a bot" in message or "confirm you're not" in message or "confirm you’re not" in message:
+                code = "BOT_CHECK"
+            elif "403" in message or "sign in" in message or "denied access" in message:
                 code = "ACCESS_DENIED"
             elif "size limit" in message or "larger than max-filesize" in message:
                 code = "SIZE_LIMIT"
