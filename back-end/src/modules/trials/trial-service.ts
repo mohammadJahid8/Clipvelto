@@ -44,6 +44,7 @@ export function createTrialService(
           "TRIAL_USED",
           "Your preview trial has already started. Sign in to continue with your free account.",
         );
+      await uploads.youtube.assertAvailable();
       const youtubeId = youtubeVideoId(url),
         id = new Types.ObjectId(),
         videoId = new Types.ObjectId(),

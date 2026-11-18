@@ -34,9 +34,9 @@ export async function startUploadWorker(
   await uploads.queue.setGlobalConcurrency(1);
   const worker = new Worker<{ videoId: string; generation: number }>(
     "upload-validation",
-    (job) =>
+    (job, token) =>
       job.name === "import"
-        ? importVideo(job, env, uploads, VideoModel, stopping.signal, importer)
+        ? importVideo(job, env, uploads, VideoModel, stopping.signal, importer, token)
         : job.name === "generate"
           ? generateClips(
               job,
@@ -154,6 +154,7 @@ export async function startUploadWorker(
     if (reconciling) return;
     reconciling = true;
     try {
+      await uploads.youtube.notify();
       await uploads.credits.reconcile();
       await uploads
         .creditsFor({

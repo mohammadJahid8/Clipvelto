@@ -46,6 +46,7 @@ export function importRoutes(
         "INVALID_YOUTUBE_IMPORT",
         "Enter one YouTube video link and confirm you have permission.",
       );
+    await uploads.youtube.assertAvailable();
     const userId = res.locals.session.user.id as string;
     await uploads.credits.allowSubmit(userId);
     const credits = uploads.credits;
@@ -107,16 +108,16 @@ export function importRoutes(
     try {
       directory = await mkdtemp(join(tmpdir(), "clipvelto-quote-"));
       const policy = await uploads.envForUser(userId);
-      const metadata = await importYoutube(
+      const metadata = await uploads.youtube.run(() => importYoutube(
         policy,
         parsed.data.url,
-        directory,
+        directory!,
         parsed.data.captureSeconds,
         AbortSignal.timeout(90000),
         0,
         undefined,
         true,
-      );
+      ));
       if (
         !("durationSeconds" in metadata) ||
         typeof metadata.durationSeconds !== "number"
@@ -162,6 +163,7 @@ export function importRoutes(
         "INVALID_YOUTUBE_IMPORT",
         "Enter a single YouTube video or livestream URL, choose a 1–10 minute live capture, and confirm you have permission to use the video.",
       );
+    await uploads.youtube.assertAvailable();
     const userId = res.locals.session.user.id as string;
     const balance = await uploads.credits.summary(userId);
     const policy = processingEnv(env, balance.role);

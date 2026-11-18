@@ -142,6 +142,7 @@ const schema = z
       .default("false")
       .transform((v) => v === "true"),
     YOUTUBE_COOKIES_FILE: optionalSecret,
+    YOUTUBE_ALERT_TO_EMAIL: z.email().optional(),
     YOUTUBE_PYTHON: z
       .string()
       .default(

@@ -282,6 +282,23 @@ YOUTUBE_COOKIES_FILE=/run/clipvelto-youtube/cookies.txt
 
 Recreate only the Clipvelto API and worker after enabling or disabling that environment variable. The directory is mounted read-only into those containers. The importer rejects symlinks, non-files, shared-readable files and exports larger than 1 MiB; it retains only YouTube domains in a private per-job copy. yt-dlp can update that temporary copy without altering the mounted original. Normal job cleanup removes the copy. Leave the variable unset until the private file is installed. A successful metadata request alone does not prove imports work: verify a short permitted media download before declaring recovery.
 
+### YouTube session outage handling
+
+Real import/quote requests detect YouTube bot challenges or an unavailable private session file. The API and worker share a persisted outage record; no extra YouTube polling requests are generated. New homepage trials, workspace imports, quotes and import retries receive a temporary-unavailability response before creating new reservations or consuming trial allowance. Individual unavailable/private videos and ordinary download errors do not automatically pause every import.
+
+Submitted imports stay queued and release their credit reservations atomically. While the same session remains blocked, the worker checks the saved outage state every five minutes without making another YouTube request. Device uploads and processing of already imported media continue. After a new YouTube-only export replaces the private cookie file, queued imports can retry automatically without an API/worker restart, still subject to normal credit, ownership and retention checks. A successful request with that replacement closes the outage. Trial jobs still expire after 24 hours; other media retain their configured expiry.
+
+The worker attempts an administrator email through the configured mail transport on its 30-second maintenance cycle. `YOUTUBE_ALERT_TO_EMAIL` overrides `CONTACT_TO_EMAIL`. MongoDB leases and incident identifiers suppress concurrent duplicate alerts and keep the state across deployments; failed mail delivery retries after 15 minutes. As with SMTP generally, a crash after mail acceptance but before recording success can cause a duplicate. Cookie contents, signed media URLs and visitor details are never included in alerts or the outage record.
+
+Renewal remains an operator action when Google requires sign-in or human verification. Export only the dedicated account’s YouTube cookies, transfer them privately, then install the replacement atomically on the VPS (the source below is an example private upload path):
+
+```sh
+install -o 1000 -g 1000 -m 600 /root/youtube-cookies.txt /var/www/clipvelto/youtube-session/cookies.txt.next
+mv /var/www/clipvelto/youtube-session/cookies.txt.next /var/www/clipvelto/youtube-session/cookies.txt
+```
+
+Keep the source export private as well. Do not overwrite the mounted file progressively or put cookies in environment values, source control, chat, email or public storage. Export replacement is detected by a content digest, not a timer; re-uploading identical invalid cookies does not clear the pause. Automated login, OTP/CAPTCHA solving and guaranteed uninterrupted YouTube access are not implemented.
+
 ## Create clips
 
 Enable local transcription and install the media tools above, then add the Anthropic key only to `back-end/.env`:

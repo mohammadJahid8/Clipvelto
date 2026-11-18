@@ -27,6 +27,7 @@ import { processingEnv } from "./processing-limits.js";
 import { processingQuote } from "@clipvelto/credit-plans";
 import { tmpdir } from "node:os";
 import { requireTemporarySpace } from "../../services/temporary-space.js";
+import { createYoutubeSessionMonitor } from "../../services/youtube-session.js";
 
 export async function createUploadService(
   connection: Connection,
@@ -35,6 +36,7 @@ export async function createUploadService(
 ) {
   const storage = createObjectStorage(env);
   const queue = createUploadQueue(env);
+  const youtube = createYoutubeSessionMonitor(connection, env);
   const Quota = createUploadQuotaModel(connection);
   await Quota.init();
   const credits = createCreditService(connection, billingCreditMode(env));
@@ -339,6 +341,7 @@ export async function createUploadService(
         "RETRY_UNAVAILABLE",
         "This video can’t be retried. Please upload a valid video again.",
       );
+    if (video.sourceProvider === "youtube") await youtube.assertAvailable();
     const selectedCredits = await creditsForRetry(video);
     const changed = await selectedCredits.transaction(async (session) => {
       const changed = await VideoModel.findOneAndUpdate(
@@ -491,6 +494,7 @@ export async function createUploadService(
     }
   }
   return {
+    youtube,
     creditsFor,
     creditsForRetry,
     assertProcessingMode,
@@ -507,6 +511,7 @@ export async function createUploadService(
     Quota,
     credits,
     close: async () => {
+      await youtube.close();
       await queue.close();
       storage.close();
     },

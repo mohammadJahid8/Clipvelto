@@ -3,7 +3,7 @@ import { createReadStream } from "node:fs";
 import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { Job } from "bullmq";
+import { DelayedError, type Job } from "bullmq";
 import type { Env } from "../config/env.js";
 import type { UploadService } from "../modules/uploads/upload-service.js";
 import type { createVideoModel } from "../modules/videos/video.model.js";
@@ -18,6 +18,7 @@ import { UploadError } from "../modules/uploads/upload-error.js";
 import { logger } from "../config/logger.js";
 import { processingQuote } from "@clipvelto/credit-plans";
 import { requireTemporarySpace } from "../services/temporary-space.js";
+import { YoutubeSessionPaused, youtubeResumeDelay } from "../services/youtube-session.js";
 
 export async function importVideo(
   job: Job<{ videoId: string; generation: number }>,
@@ -26,6 +27,7 @@ export async function importVideo(
   VideoModel: ReturnType<typeof createVideoModel>,
   shutdown: AbortSignal,
   importer = importYoutube,
+  token?: string,
 ) {
   const run = randomUUID();
   const video = await VideoModel.findOneAndUpdate(
@@ -93,10 +95,10 @@ export async function importVideo(
         : policy.UPLOAD_MAX_BYTES,
       TRANSCRIPTION_MAX_SECONDS: maximum,
     };
-    const imported = await importer(
+    const imported = await uploads.youtube.run(() => importer(
       importEnv,
-      video.youtubeId,
-      directory,
+      video.youtubeId!,
+      directory!,
       video.captureSeconds ?? 300,
       controller.signal,
       guest ? 180 : 0,
@@ -131,7 +133,7 @@ export async function importVideo(
               );
             });
           },
-    );
+    ));
     const info = await stat(imported.path);
     if (!info.size || info.size > importEnv.UPLOAD_MAX_BYTES)
       throw new Error("Import exceeds size limit");
@@ -222,6 +224,22 @@ export async function importVideo(
       await session.endSession();
     }
   } catch (error) {
+    if (error instanceof YoutubeSessionPaused) {
+      await uploads.creditsFor(video).transaction(async (session) => {
+        const waiting = await VideoModel.updateOne(filter, {
+          $set: {
+            status: "import_queued",
+            importFailureCode: "SESSION_PAUSED",
+            statusMessage: "YouTube imports are temporarily paused. Your job is saved and will retry automatically. No credits are reserved while it waits.",
+          },
+          $unset: { validationRunId: 1 },
+        }, { session });
+        if (waiting.matchedCount && !video.userId.startsWith("trial:"))
+          await uploads.creditsFor(video).refund(video._id.toString(), session);
+      });
+      await job.moveToDelayed(Date.now() + youtubeResumeDelay, token);
+      throw new DelayedError();
+    }
     logger.warn(
       {
         videoId: video._id.toString(),
