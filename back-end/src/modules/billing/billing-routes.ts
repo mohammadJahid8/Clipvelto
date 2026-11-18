@@ -32,6 +32,7 @@ export function billingRoutes(
       checkout: {
         ...billing.checkout,
         customerEmail: res.locals.session.user.email,
+        allowDiscounts: (await billing.paddle?.canUseDiscounts(userId)) ?? false,
       },
       paymentReview: await billing.holds.active(userId),
     });

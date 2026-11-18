@@ -6,6 +6,7 @@ import type { CreditService } from "../credits/credit-service.js";
 import { UploadError } from "../uploads/upload-error.js";
 import { logger } from "../../config/logger.js";
 import type { billingOrderModel } from "./billing-models.js";
+import { billingDiscounts } from "./billing-discounts.js";
 import { paymentHolds } from "./payment-holds.js";
 import {
   paddleClient,
@@ -29,6 +30,7 @@ export function createPaddleBilling(
   const client = paddleClient(env);
   const environment = env.PADDLE_ENVIRONMENT;
   const holds = paymentHolds(connection, credits.mode);
+  const discounts = billingDiscounts(connection);
   const events = connection.db!.collection<{
     _id: string;
     transactionId: string;
@@ -95,6 +97,27 @@ export function createPaddleBilling(
         ...scope,
       }).session(session);
       if (!order) return;
+      const approval = transaction.discountId
+        ? await discounts.findOne(
+            {
+              _id: `${environment}:${transaction.discountId}`,
+              userIds: order.userId,
+              priceId: order.paddlePriceId,
+              $or: [
+                { redeemedOrderId: { $exists: false } },
+                { redeemedOrderId: order._id },
+              ],
+            },
+            { session },
+          )
+        : null;
+      const billedAt = new Date(transaction.billedAt ?? transaction.updatedAt);
+      const approvedDiscount =
+        approval &&
+        (transaction.status !== "completed" ||
+          (Number.isFinite(billedAt.getTime()) && billedAt <= approval.expiresAt))
+          ? { id: approval.discountId, percent: approval.percent }
+          : undefined;
       await credits.ensureWallet(order.userId, session);
       async function review(reason: string) {
         order!.status = "review";
@@ -103,7 +126,7 @@ export function createPaddleBilling(
       if (
         (order.paddleTransactionId &&
           order.paddleTransactionId !== transactionId) ||
-        !validPaddleTransaction(transaction, order)
+        !validPaddleTransaction(transaction, order, approvedDiscount)
       ) {
         await review("Payment does not match the original credit-pack order");
       } else {
@@ -144,6 +167,15 @@ export function createPaddleBilling(
           transaction.status === "completed" &&
           !["paid", "refunded", "review"].includes(order.status)
         ) {
+          if (approval)
+            await discounts.updateOne(
+              { _id: approval._id },
+              { $set: { redeemedOrderId: order._id } },
+              { session },
+            );
+          order.appliedDiscountId = transaction.discountId ?? undefined;
+          order.discountCents = Number(transaction.details!.totals.discount);
+          order.paidTotalCents = Number(transaction.details!.totals.total);
           await credits.grantPurchase(
             order.userId,
             order._id,
@@ -172,6 +204,17 @@ export function createPaddleBilling(
 
   return {
     holds,
+    async canUseDiscounts(userId: string) {
+      return !!(await discounts.findOne(
+        {
+          environment,
+          userIds: userId,
+          expiresAt: { $gt: new Date() },
+          redeemedOrderId: { $exists: false },
+        },
+        { projection: { _id: 1 } },
+      ));
+    },
     start() {
       if (timer) return;
       // Recover paid checkouts even if a browser closes or a notification is

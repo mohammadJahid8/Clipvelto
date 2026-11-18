@@ -10,6 +10,8 @@ export const orderSchema = z.object({
   mode: z.enum(["test", "live"]).default("test"),
   provider: z.enum(["mock", "paddle"]).default("mock"),
   paddleTransactionId: z.string().optional(),
+  discountCents: z.number().int().nonnegative().optional(),
+  paidTotalCents: z.number().int().nonnegative().optional(),
   status: z.enum([
     "pending",
     "paid",
@@ -28,6 +30,7 @@ export const billingSchema = z.object({
     environment: z.enum(["sandbox", "live"]),
     clientToken: z.string().nullable(),
     customerEmail: z.email(),
+    allowDiscounts: z.boolean().default(false),
   }),
   paymentReview: z.boolean(),
   pendingRemovals: z.number().int().nonnegative().default(0),

@@ -11,6 +11,7 @@ import {
   createCreditService,
 } from "../src/modules/credits/credit-service.js";
 import { createBillingService } from "../src/modules/billing/billing-service.js";
+import { billingDiscounts } from "../src/modules/billing/billing-discounts.js";
 import { UploadError } from "../src/modules/uploads/upload-error.js";
 
 let database: MongoMemoryReplSet;
@@ -227,6 +228,7 @@ beforeEach(async () => {
     ].map((model) => model.deleteMany({})),
   );
   await connection.db!.collection("paddle_events").deleteMany({});
+  await connection.db!.collection("billing_discounts").deleteMany({});
   await connection.db!.collection("payment_holds").deleteMany({});
 });
 after(async () => {
@@ -472,4 +474,76 @@ test("sandbox cannot fund production and live payments require explicit HTTPS ac
       PADDLE_ENVIRONMENT: "sandbox",
     }),
   );
+});
+
+async function approveDiscount(percent: number, userIds = ["alice"]) {
+  const id = `dsc_${"d".repeat(26)}`;
+  await billingDiscounts(connection).insertOne({
+    _id: `sandbox:${id}`,
+    discountId: id,
+    environment: "sandbox",
+    userIds,
+    priceId: priceIds[0],
+    percent,
+    expiresAt: new Date(Date.now() + 60000),
+  });
+  return id;
+}
+function discounted(id: string, discountId: string, percent: number) {
+  completed(id);
+  const row = rawTransactions.get(id)!;
+  row.discount_id = discountId;
+  const totals = (row.details as { totals: Record<string, string> }).totals;
+  totals.discount = String(Math.round(Number(totals.subtotal) * percent / 100));
+  totals.total = String(Number(totals.subtotal) - Number(totals.discount));
+  totals.grand_total = totals.total;
+}
+
+test("approved 100% and paid-test discounts grant once and record actual totals", async () => {
+  for (const percent of [100, 85]) {
+    const id = await approveDiscount(percent);
+    const order = await billing.create("alice", "starter", randomUUID());
+    assert.equal(await billing.paddle!.canUseDiscounts("alice"), true);
+    assert.equal(await billing.paddle!.canUseDiscounts("bob"), false);
+    discounted(order.paddleTransactionId!, id, percent);
+    await Promise.all([event(order.paddleTransactionId!), event(order.paddleTransactionId!)]);
+    const saved = await billing.Order.findById(order._id).lean();
+    assert.equal(saved?.status, "paid");
+    assert.equal(saved?.discountCents, percent === 100 ? 600 : 510);
+    assert.equal(saved?.paidTotalCents, percent === 100 ? 0 : 90);
+    assert.equal(await billing.paddle!.canUseDiscounts("alice"), false);
+    await connection.db!.collection("billing_discounts").deleteMany({});
+  }
+  assert.equal((await credits.summary("alice")).available, 255);
+});
+
+test("discount approvals cannot cross accounts, packs, expiry or amount, or fund two orders", async () => {
+  const id = await approveDiscount(85);
+  for (const [user, pack, percent] of [
+    ["bob", "starter", 85],
+    ["alice", "creator", 85],
+    ["alice", "starter", 100],
+  ] as const) {
+    const order = await billing.create(user, pack, randomUUID());
+    discounted(order.paddleTransactionId!, id, percent);
+    await event(order.paddleTransactionId!);
+    assert.equal((await billing.Order.findById(order._id))?.status, "review");
+    await connection.db!.collection("payment_holds").deleteMany({});
+  }
+  const expired = await billing.create("alice", "starter", randomUUID());
+  await connection.db!.collection("billing_discounts").updateOne({}, { $set: { expiresAt: new Date(0) } });
+  discounted(expired.paddleTransactionId!, id, 85);
+  await event(expired.paddleTransactionId!);
+  assert.equal((await billing.Order.findById(expired._id))?.status, "review");
+  await connection.db!.collection("payment_holds").deleteMany({});
+  await connection.db!.collection("billing_discounts").updateOne({}, { $set: { expiresAt: new Date(Date.now() + 60000) } });
+  const first = await billing.create("alice", "starter", randomUUID());
+  const second = await billing.create("alice", "starter", randomUUID());
+  discounted(first.paddleTransactionId!, id, 85);
+  discounted(second.paddleTransactionId!, id, 85);
+  await Promise.all([event(first.paddleTransactionId!), event(second.paddleTransactionId!)]);
+  const statuses = (await billing.Order.find({ _id: { $in: [first._id, second._id] } }).lean()).map(o => o.status).sort();
+  assert.deepEqual(statuses, ["paid", "review"]);
+  assert.equal((await credits.summary("alice")).available, 135);
+  assert.equal((await credits.summary("bob")).available, 15);
 });

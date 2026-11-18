@@ -75,10 +75,29 @@ export function validPaddlePrice(
 export function validPaddleTransaction(
   transaction: Transaction,
   order: BillingOrder,
+  discount?: { id: string; percent: number },
 ) {
   const item = transaction.items[0];
   const price = item?.price;
   const totals = transaction.details?.totals;
+  const discountCents = discount
+    ? Math.round((order.priceCents * discount.percent) / 100)
+    : 0;
+  const validDiscount = discount
+    ? transaction.discountId === discount.id &&
+      Number.isInteger(discount.percent) &&
+      discount.percent > 0 &&
+      discount.percent <= 100 &&
+      order.taxMode === "external"
+    : !transaction.discountId;
+  const discountedTotal =
+    totals && discount
+      ? /^\d+$/.test(totals.tax) &&
+        totals.total ===
+          String(order.priceCents - discountCents + Number(totals.tax)) &&
+        totals.grandTotal === totals.total &&
+        totals.credit === "0"
+      : true;
   // Match the immutable local order, not the payer's editable email or browser
   // event. Prices/quantities/custom data supplied by a browser never set credits.
   return (
@@ -86,7 +105,7 @@ export function validPaddleTransaction(
     transaction.collectionMode === "automatic" &&
     transaction.currencyCode === order.currency &&
     !transaction.subscriptionId &&
-    !transaction.discountId &&
+    validDiscount &&
     transaction.customData?.clipvelto_order_id === order._id &&
     transaction.customData?.clipvelto_user_id === order.userId &&
     transaction.items.length === 1 &&
@@ -106,6 +125,6 @@ export function validPaddleTransaction(
         (order.taxMode === "internal"
           ? totals.total === String(order.priceCents)
           : totals.subtotal === String(order.priceCents)) &&
-        totals.discount === "0"))
+        totals.discount === String(discountCents) && discountedTotal))
   );
 }

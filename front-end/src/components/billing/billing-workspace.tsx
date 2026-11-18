@@ -221,7 +221,7 @@ export function BillingWorkspace({ initial }: { initial: Billing }) {
         displayMode: "overlay",
         theme:
           document.documentElement.dataset.theme === "dark" ? "dark" : "light",
-        showAddDiscounts: false,
+        showAddDiscounts: data.checkout.allowDiscounts,
         allowDiscountRemoval: false,
       },
     });
@@ -458,8 +458,9 @@ export function BillingWorkspace({ initial }: { initial: Billing }) {
                   </strong>
                   <p>
                     {date(item.createdAt)} UTC · $
-                    {(item.priceCents / 100).toFixed(2)}
-                    {item.taxMode === "internal" ? " incl. tax" : " before tax"}
+                    {((item.paidTotalCents ?? item.priceCents) / 100).toFixed(2)}
+                    {item.paidTotalCents !== undefined || item.taxMode === "internal" ? " incl. tax" : " before tax"}
+                    {!!item.discountCents && ` · $${(item.discountCents / 100).toFixed(2)} discount`}
                     {" · "}
                     {item.status}
                   </p>
