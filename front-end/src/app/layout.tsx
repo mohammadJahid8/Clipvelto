@@ -111,7 +111,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${dmSans.variable} ${spaceGrotesk.variable}`} data-clarity-mask="true">
+      <body className={`${dmSans.variable} ${spaceGrotesk.variable}`} data-clarity-unmask="true">
         {children}
         <Script id="microsoft-clarity" strategy="afterInteractive">
           {clarityScript}

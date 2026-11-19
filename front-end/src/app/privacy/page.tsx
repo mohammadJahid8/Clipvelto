@@ -148,17 +148,18 @@ export default function PrivacyPage() {
           <h2>Website analytics</h2>
           <p>
             We use Microsoft Clarity to understand visits, navigation, clicks,
-            scrolling and technical problems through heatmaps and masked session
+            scrolling and technical problems through heatmaps and session
             recordings. Microsoft receives browser, device, page and interaction
             information for this purpose. Clarity runs in cookieless mode with
-            advertising and analytics cookie storage denied. We do not send
-            custom account identifiers or email addresses to Clarity.
+            advertising and analytics cookie storage denied. We do not use
+            Clarity’s custom user-identification API.
           </p>
           <p>
-            Page content and form entries are masked, and sensitive URL query
-            parameters are masked in the project settings. Clarity is used to
-            review site interactions, rather than the contents of your videos,
-            transcripts or payment details. Microsoft processes analytics under its{" "}
+            Visible page content, including text, images and account information
+            displayed outside form fields, can appear in recordings. Clarity
+            automatically masks input fields and dropdown values. Sensitive URL
+            query parameters remain masked in the project settings. Microsoft
+            processes analytics under its{" "}
             <a href="https://privacy.microsoft.com/privacystatement" target="_blank" rel="noopener noreferrer">privacy statement</a>.
           </p>
           <p>

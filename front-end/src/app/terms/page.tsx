@@ -37,8 +37,9 @@ export default function TermsPage() {
           <h2>Website analytics</h2>
           <p>
             We use Microsoft Clarity in cookieless mode to understand site usage
-            and diagnose usability problems. Page content and form entries are
-            masked. Our <Link href="/privacy#analytics">privacy policy</Link>{" "}
+            and diagnose usability problems. Visible page content is included in
+            recordings; Clarity automatically masks form fields. Our{" "}
+            <Link href="/privacy#analytics">privacy policy</Link>{" "}
             explains this processing and how to contact us about it.
           </p>
         </section>
