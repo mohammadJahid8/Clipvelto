@@ -7,6 +7,7 @@ import { topics, articlesForTopic } from "@/content/topics";
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: absoluteUrl(), changeFrequency: "monthly", priority: 1 },
+    { url: absoluteUrl("/gta-6-countdown"), lastModified: "2026-11-19", changeFrequency: "daily", priority: 0.9, images: [absoluteUrl("/blog/gta-6-jason-lucia.jpg"), absoluteUrl("/blog/gta-6-vice-city.jpg")] },
     {
       url: absoluteUrl("/blog"),
       lastModified: articles

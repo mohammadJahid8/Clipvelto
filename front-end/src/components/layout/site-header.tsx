@@ -53,6 +53,7 @@ export function SiteHeader({
                 <a href="/#how-it-works">How it works</a>
                 <a href="/#pricing">Pricing</a>
                 <Link href="/blog">Blog</Link>
+                <Link href="/gta-6-countdown">GTA 6 countdown</Link>
               </nav>
               <div className="nav-actions">
                 <ThemeMenu />
@@ -99,6 +100,9 @@ export function SiteHeader({
                 </a>
                 <Link href="/blog" onClick={() => close()}>
                   Blog
+                </Link>
+                <Link href="/gta-6-countdown" onClick={() => close()}>
+                  GTA 6 countdown
                 </Link>
                 {signedIn ? (
                   <Link href="/dashboard" onClick={() => close()}>

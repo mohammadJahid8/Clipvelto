@@ -17,6 +17,7 @@ const groups = [
     links: [
       ["Blog", "/blog#top"],
       ["Gaming & GTA 6", "/blog/topics/gaming#top"],
+      ["GTA 6 countdown", "/gta-6-countdown#top"],
       ["Video editing", "/blog/topics/video-editing#top"],
       ["Podcast clips", "/blog/topics/podcasts#top"],
       ["Interviews & webinars", "/blog/topics/repurposing#top"],
