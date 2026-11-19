@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUp, ArrowUpRight } from "lucide-react";
 import { Brand } from "@/components/ui/brand";
+import { AnalyticsPreferencesButton } from "@/components/analytics/clarity-analytics";
 
 const groups = [
   {
@@ -63,9 +64,12 @@ export function SiteFooter() {
         </div>
         <div className="footer-base">
           <p>© {new Date().getFullYear()} Clipvelto. All rights reserved.</p>
-          <a href="#top">
-            Back to top <ArrowUp size={16} aria-hidden="true" />
-          </a>
+          <div className="footer-base-links">
+            <AnalyticsPreferencesButton />
+            <a href="#top">
+              Back to top <ArrowUp size={16} aria-hidden="true" />
+            </a>
+          </div>
         </div>
       </div>
     </footer>

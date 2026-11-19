@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { DM_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import "@/styles/billing.css";
 import "@/styles/public-pages.css";
 import "@/styles/editorial.css";
+import "@/styles/analytics.css";
+import { ClarityAnalytics } from "@/components/analytics/clarity-analytics";
 import { absoluteUrl, sharingImage, site } from "@/lib/seo";
 
 const dmSans = DM_Sans({
@@ -108,8 +111,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${dmSans.variable} ${spaceGrotesk.variable}`}>
+      <body className={`${dmSans.variable} ${spaceGrotesk.variable}`} data-clarity-mask="true">
         {children}
+        <Suspense fallback={null}><ClarityAnalytics /></Suspense>
       </body>
     </html>
   );

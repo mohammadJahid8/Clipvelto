@@ -1,6 +1,7 @@
 import { publicMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { PublicPage } from "@/components/layout/public-page";
+import { AnalyticsPreferencesButton } from "@/components/analytics/clarity-analytics";
 export const metadata = publicMetadata({
   title: "Privacy policy",
   description:
@@ -12,7 +13,7 @@ export default function PrivacyPage() {
     <PublicPage
       title="Privacy policy"
       intro="What we collect, why we need it, and the choices you have."
-      updated="17 November 2026"
+      updated="19 November 2026"
     >
       <article className="public-prose">
         <section>
@@ -142,6 +143,33 @@ export default function PrivacyPage() {
             You can clear cookies and browser storage in your browser. Doing so
             can sign you out or prevent an unclaimed preview from being
             recovered.
+          </p>
+        </section>
+        <section id="analytics">
+          <h2>Optional website analytics</h2>
+          <p>
+            With your permission, we use Microsoft Clarity on public pages to
+            understand navigation, clicks, scrolling and technical problems
+            through heatmaps and masked session recordings. Microsoft receives
+            browser, device, page and interaction information for this purpose.
+            Clarity does not load until you choose to allow analytics. We keep
+            advertising consent denied and do not send custom account identifiers
+            or email addresses to Clarity.
+          </p>
+          <p>
+            Page content is masked before collection. Recording is stopped on
+            authentication and private workspace pages, including billing and
+            administration. Pages with query strings are also excluded. We do
+            not use Clarity to record your videos, transcripts or payment details.
+            Microsoft processes analytics under its{" "}
+            <a href="https://privacy.microsoft.com/privacystatement" target="_blank" rel="noopener noreferrer">privacy statement</a>.
+          </p>
+          <p>
+            Your choice is stored in this browser for up to six months. You can
+            decline analytics and still use Clipvelto. Change or withdraw your
+            choice at any time using <AnalyticsPreferencesButton /> here or in
+            the footer. Withdrawal stops future recording; it does not remove
+            information already collected. Contact us about deletion requests.
           </p>
         </section>
         <section>
