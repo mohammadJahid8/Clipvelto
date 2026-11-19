@@ -165,7 +165,9 @@ export default function TermsPage() {
         <section>
           <h2>Storage and deletion</h2>
           <p>
-            New media is normally kept for 30 days; failed or unpaid sources and
+            Generated clips are normally kept for 30 days. Original recordings
+            are removed after all clips have been saved successfully; video
+            details and transcripts remain available in your workspace. Failed or unpaid sources and
             unclaimed trials are normally kept for up to 24 hours. Background
             cleanup may take additional time. Older recordings may have a
             different expiry; check your workspace and keep your own copies of

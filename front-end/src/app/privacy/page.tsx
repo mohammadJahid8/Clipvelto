@@ -172,7 +172,9 @@ export default function PrivacyPage() {
         <section>
           <h2>How long information is kept</h2>
           <p>
-            New account media is normally available for 30 days. Failed or
+            Generated account clips are normally available for 30 days. Original
+            recordings are removed after all clips have been saved successfully.
+            We keep the video details and transcript for your workspace. Failed or
             unpaid source recordings are normally kept for up to 24 hours for
             retry. Unclaimed homepage trials expire after 24 hours. Removal
             happens through background cleanup, so deletion may not be

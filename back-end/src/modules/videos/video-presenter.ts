@@ -18,7 +18,7 @@ export function presentVideo(
     createdAt: video.createdAt,
     processingStartedAt: video.processingStartedAt ?? video.createdAt,
     sizeBytes:
-      video.sourceProvider === "youtube" && !video.sourceEtag
+      video.sourceProvider === "youtube" && !video.sourceEtag && !video.sourceRemovedAt
         ? null
         : (video.expectedSize ?? null),
     durationSeconds: video.durationSeconds ?? null,

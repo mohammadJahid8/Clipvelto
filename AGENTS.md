@@ -39,6 +39,8 @@ The user authorized $6/120-credit Starter, $15/360-credit Creator and $32/900-cr
 
 ## Submitted-job deletion policy
 
+Original recordings are processing inputs, not an archive: after all account clips are successfully stored and checked, remove the source, obsolete render outputs, superseded transcription checkpoints and claimed-trial previews. Preserve published clips, the current transcript, credit history and video metadata. Keep unclaimed trial sources until claim/expiry and failed-job sources for the existing retry window. Only clean registered per-video keys automatically; local and production currently share the R2 bucket, so never treat objects absent from just one database as orphans.
+
 Users cannot cancel submitted uploads, queued imports or processing jobs. Enforce this in the API as well as the UI. Permit owner deletion only after clips are completed and no media work is queued or running. Deleting completed videos never refunds spent credits. System failures still release reservations and preserve retry data. Retain legacy cancellation settlement only for previously requested removals.
 
 ## Paddle integration authorization

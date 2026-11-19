@@ -124,6 +124,7 @@ const videoSchema = new Schema(
     stagingEtag: String,
     stagingCleanedAt: Date,
     sourceEtag: String,
+    sourceRemovedAt: Date,
     uploadExpiresAt: Date,
     signedUrlExpiresAt: Date,
     durationSeconds: Number,

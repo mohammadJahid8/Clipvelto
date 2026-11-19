@@ -19,6 +19,7 @@ import { generateClips } from "./generate-clips.js";
 import { importYoutube } from "../services/youtube-importer.js";
 import { selectHighlights } from "../services/highlight-selector.js";
 import { renderClip } from "../services/clip-renderer.js";
+import { createMediaCleanup } from "./cleanup-media.js";
 
 export async function startUploadWorker(
   connection: Connection,
@@ -31,6 +32,7 @@ export async function startUploadWorker(
   renderer = renderClip,
 ) {
   const stopping = new AbortController();
+  const cleanupMedia = createMediaCleanup(VideoModel, uploads);
   await uploads.queue.setGlobalConcurrency(1);
   const worker = new Worker<{ videoId: string; generation: number }>(
     "upload-validation",
@@ -366,7 +368,10 @@ export async function startUploadWorker(
                 .refund(deleted._id.toString(), session);
               await uploads.Quota.updateOne(
                 { _id: deleted.userId },
-                { $inc: { bytes: -(deleted.expectedSize ?? 0), videos: -1 } },
+                { $inc: {
+                  bytes: deleted.sourceRemovedAt ? 0 : -(deleted.expectedSize ?? 0),
+                  videos: -1,
+                } },
                 { session },
               );
             }
@@ -375,6 +380,7 @@ export async function startUploadWorker(
           await session.endSession();
         }
       }
+      await cleanupMedia();
     } catch {
       logger.warn(
         "Upload reconciliation will retry after a service interruption",
