@@ -10,6 +10,11 @@ on:
       - README.md
       - AGENTS.md
   workflow_dispatch:
+    inputs:
+      full_deployment:
+        description: Also refresh backend services (requires an idle media queue)
+        type: boolean
+        default: false
 
 concurrency:
   group: clipvelto-production
@@ -29,6 +34,8 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Check deployment configuration
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -107,6 +114,7 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
           IMAGE_TAG: ${{ github.sha }}
+          FORCE_FULL_DEPLOYMENT: ${{ inputs.full_deployment || false }}
           REGISTRY_DIRECTORY: /var/www/clipvelto/.registry-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
@@ -120,4 +128,11 @@ jobs:
           trap cleanup_registry EXIT
           "${connection[@]}" "install -d -m 700 '$REGISTRY_DIRECTORY'"
           printf '%s' "$GHCR_TOKEN" | "${connection[@]}" "DOCKER_CONFIG='$REGISTRY_DIRECTORY' docker login ghcr.io --username '$GHCR_USER' --password-stdin"
-          "${connection[@]}" "DOCKER_CONFIG='$REGISTRY_DIRECTORY' bash /var/www/clipvelto/deploy.sh '$IMAGE_TAG'"
+          deployment_mode=full
+          deployed_tag=$("${connection[@]}" 'cat /var/www/clipvelto/.image-tag 2>/dev/null || true')
+          if [[ "$FORCE_FULL_DEPLOYMENT" != true && "$deployed_tag" =~ ^[a-f0-9]{40}$ ]] && git cat-file -e "$deployed_tag^{commit}" 2>/dev/null; then
+            if git diff --quiet "$deployed_tag" "$IMAGE_TAG" -- back-end packages package.json package-lock.json front-end/package.json deploy/compose.yaml deploy/backend.dockerfile 'deploy/mongo-*' .dockerignore; then
+              deployment_mode=frontend
+            fi
+          fi
+          "${connection[@]}" "DOCKER_CONFIG='$REGISTRY_DIRECTORY' bash /var/www/clipvelto/deploy.sh '$IMAGE_TAG' '$deployment_mode'"
