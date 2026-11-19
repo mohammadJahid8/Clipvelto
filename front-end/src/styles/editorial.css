@@ -568,8 +568,7 @@
   font-size: 0.875rem;
   color: var(--muted);
 }
-.footer-base-links > a,
-.footer-base-links > button {
+.footer-base > a {
   display: inline-flex;
   min-height: 40px;
   gap: 8px;

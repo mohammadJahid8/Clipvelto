@@ -1,12 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
+import Script from "next/script";
 import { DM_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import "@/styles/billing.css";
 import "@/styles/public-pages.css";
 import "@/styles/editorial.css";
-import "@/styles/analytics.css";
-import { ClarityAnalytics } from "@/components/analytics/clarity-analytics";
 import { absoluteUrl, sharingImage, site } from "@/lib/seo";
 
 const dmSans = DM_Sans({
@@ -70,6 +68,8 @@ export const viewport: Viewport = {
 
 // Runs before the first paint; storage failure falls back to the system preference.
 const themeScript = `(function(){var t='system';try{t=localStorage.getItem('clipvelto-theme')||'system'}catch(e){}var dark=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=dark?'dark':'light';document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute('content',dark?'#0c0f14':'#fafaf8')})})()`;
+// Cookieless analytics; never send a fabricated cookie-consent grant.
+const clarityScript = `(function(c,l,a,r,i){if(!/^(www\\.)?clipvelto\\.com$/.test(c.location.hostname))return;c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a]('consentv2',{ad_Storage:'denied',analytics_Storage:'denied'});var t=l.createElement(r);t.async=true;t.src='https://www.clarity.ms/tag/'+i;l.head.appendChild(t)})(window,document,'clarity','script','zfwos3evxf');`;
 const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
@@ -113,7 +113,9 @@ export default function RootLayout({
       </head>
       <body className={`${dmSans.variable} ${spaceGrotesk.variable}`} data-clarity-mask="true">
         {children}
-        <Suspense fallback={null}><ClarityAnalytics /></Suspense>
+        <Script id="microsoft-clarity" strategy="afterInteractive">
+          {clarityScript}
+        </Script>
       </body>
     </html>
   );

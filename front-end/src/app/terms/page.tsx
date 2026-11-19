@@ -12,7 +12,7 @@ export default function TermsPage() {
     <PublicPage
       title="Terms & conditions"
       intro="The rules for using Clipvelto and working with your recordings."
-      updated="17 November 2026"
+      updated="19 November 2026"
     >
       <article className="public-prose">
         <section>
@@ -31,6 +31,15 @@ export default function TermsPage() {
             service configuration, processing capacity and external providers.
             We do not promise a particular number of highlights, processing
             time, social-media performance or audience growth.
+          </p>
+        </section>
+        <section>
+          <h2>Website analytics</h2>
+          <p>
+            We use Microsoft Clarity in cookieless mode to understand site usage
+            and diagnose usability problems. Page content and form entries are
+            masked. Our <Link href="/privacy#analytics">privacy policy</Link>{" "}
+            explains this processing and how to contact us about it.
           </p>
         </section>
         <section>
