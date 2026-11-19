@@ -11,6 +11,7 @@ import { formatFileSize } from "@/lib/format-file-size";
 import { VideoClips } from "./video-clips";
 import { VideoTranscript } from "./video-transcript";
 import { VideoProcessing } from "./video-processing";
+import { WorkspaceHelp } from "./workspace-help";
 import {
   Dialog,
   DialogBackdrop,
@@ -102,7 +103,6 @@ export function VideoDetail({ initialVideo }: { initialVideo: Video }) {
           </div>
           <div>
             <h2>{video.title}</h2>
-            <p>{video.originalFilename}</p>
           </div>
           <span
             className={`video-status video-status-${video.generation.status === "failed" ? "failed" : video.status}`}
@@ -112,19 +112,19 @@ export function VideoDetail({ initialVideo }: { initialVideo: Video }) {
         </div>
         {video.quotedCredits != null && (
           <p className="billing-help">
-            Processing quote:{" "}
+            Quote:{" "}
             <strong>
               {Number(video.quotedCredits.toFixed(2))}{" "}
               {video.creditMode === "test" ? "test " : ""}credits
             </strong>
-            . Administrator jobs are exempt.{" "}
+            {" · "}
             {video.mediaExpiresAt && (
               <>
-                Media available until{" "}
+                Available until{" "}
                 {new Date(video.mediaExpiresAt).toLocaleDateString("en-GB", {
                   timeZone: "UTC",
                 })}
-                .
+                {" · "}
               </>
             )}{" "}
             <Link href="/dashboard/billing">View credits</Link>
@@ -132,7 +132,7 @@ export function VideoDetail({ initialVideo }: { initialVideo: Video }) {
         )}
         {working ? (
           <VideoProcessing video={video} />
-        ) : (
+        ) : (! ["completed", "failed"].includes(video.generation.status) || video.status === "failed") ? (
           <div
             className="video-validation-status"
             role="status"
@@ -148,24 +148,17 @@ export function VideoDetail({ initialVideo }: { initialVideo: Video }) {
             )}
             <div>
               <h3>
-                {video.generation.status === "completed"
-                  ? "Your clips are ready."
-                  : video.status === "ready"
-                    ? "Your video is uploaded and checked."
-                    : statusLabel}
+                {video.status === "ready" ? "Video ready" : statusLabel}
               </h3>
               <p>
-                {video.generation.status === "completed"
-                  ? "Preview and download your clips below."
-                  : video.generation.status === "failed"
-                    ? "Retry clip creation below to continue."
-                    : (video.statusMessage ??
-                      "Your video is saved in your workspace.")}
+                {video.statusMessage ?? "Ready to create clips."}
               </p>
             </div>
           </div>
-        )}
+        ) : null}
         {video.durationSeconds !== null && (
+          <WorkspaceHelp title="Video details">
+          <p>{video.originalFilename}</p>
           <dl className="video-metadata">
             <div>
               <dt>Source file</dt>
@@ -192,6 +185,7 @@ export function VideoDetail({ initialVideo }: { initialVideo: Video }) {
               </dd>
             </div>
           </dl>
+          </WorkspaceHelp>
         )}
         {error && (
           <p className="form-alert" role="alert">

@@ -13,6 +13,7 @@ import { clientApi } from "@/lib/client-api";
 import { formatFileSize } from "@/lib/format-file-size";
 import { ClientForm } from "@/components/ui/client-form";
 import { RenderOptionsFields } from "./render-options-fields";
+import { WorkspaceHelp } from "./workspace-help";
 import {
   initialRenderOptions,
   renderOptionsPayload,
@@ -200,16 +201,7 @@ export function UploadVideoForm() {
   }
 
   return (
-    <section className="upload-form-panel workspace-panel">
-      <div className="panel-heading">
-        <div>
-          <h2>Give your next idea a starting point.</h2>
-          <p>
-            Upload a video you own or are authorized to use. We’ll check it and
-            save it privately.
-          </p>
-        </div>
-      </div>
+    <section className="upload-form-panel workspace-panel" aria-label="Device upload">
       <ClientForm
         className="video-upload-form"
         noValidate
@@ -299,8 +291,7 @@ export function UploadVideoForm() {
         )}
         {config?.enabled && !config.workerAvailable && (
           <p className="form-alert" role="status">
-            File checks are temporarily offline. Your upload can be received,
-            and checks will resume when the worker is available.
+            Processing is temporarily offline. Your upload will wait in the queue.
           </p>
         )}
         <div className={`upload-drop-area${file ? " has-file" : ""}`}>
@@ -311,11 +302,11 @@ export function UploadVideoForm() {
               <Upload size={27} aria-hidden="true" />
             )}
           </div>
-          <h3>{file ? file.name : "Choose your source video"}</h3>
+          <h3>{file ? file.name : "Upload a video"}</h3>
           <p>
             {file
-              ? `${formatFileSize(file.size)} · Selected from your device`
-              : "Podcasts, interviews, tutorials, and moments worth keeping."}
+              ? formatFileSize(file.size)
+              : "MP4, MOV or WebM"}
           </p>
           <button
             type="button"
@@ -347,19 +338,12 @@ export function UploadVideoForm() {
               reset({ ownsRights: false });
             }}
           />
-          <p className="upload-limit-note">
-            MP4, MOV, or WebM
-            {config ? " · Length is based on your available credits" : ""}
-          </p>
         </div>
         {file && (
-          <p className="billing-test-note">
+          <p className="upload-quote">
             {duration
               ? `Estimated quote: ${Number(processingQuote(duration, file.size).credits.toFixed(2))} credits.`
               : `Storage minimum: ${Number(processingQuote(0, file.size).credits.toFixed(2))} credits; full quote follows the duration check.`}{" "}
-            One credit covers one source minute, minimum 1 credit. The higher of
-            video duration or 2 credits per GB applies. The server verifies the
-            final duration before processing.{" "}
             <Link href="/dashboard/billing">View credits</Link>
           </p>
         )}
@@ -385,7 +369,7 @@ export function UploadVideoForm() {
                 <Check size={15} aria-hidden="true" />
               </Checkbox>
               <Label>
-                I own this video or have permission to upload and process it.
+                I own this video or have permission to use it.
               </Label>
             </Field>
           )}
@@ -428,16 +412,14 @@ export function UploadVideoForm() {
             aria-busy={busy}
           >
             <Upload size={17} aria-hidden="true" />
-            {busy ? "Uploading…" : uploaded ? "Finish upload" : "Upload video"}
+            {busy ? "Uploading…" : uploaded ? "Finish upload" : "Create clips"}
           </button>
         </div>
-        <p className="upload-phase-note">
-          Upload once and we’ll create your clips automatically. Credits are
-          reserved before processing and charged when your clips are ready.
-          Submitted jobs can’t be cancelled. You can delete videos after clip
-          generation finishes. Failed jobs return the reservation. New media is
-          kept for 30 days.
-        </p>
+        <p className="field-hint upload-commit-note">Submitted jobs can’t be cancelled.</p>
+        <WorkspaceHelp title="Credits & storage details">
+          <p>1 credit per video minute, minimum 1 credit. Large files have a minimum of 2 credits per GB; the higher quote applies. Duration is verified before processing.</p>
+          <p>Credits are reserved before processing and returned if it fails. Generated clips are kept for 30 days; originals are removed after completion.</p>
+        </WorkspaceHelp>
       </ClientForm>
     </section>
   );

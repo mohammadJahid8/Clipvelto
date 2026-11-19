@@ -30,7 +30,6 @@ export function VideoClips({
             <Scissors size={21} aria-hidden="true" />
             Your clips
           </h2>
-          <p>Preview your clips and download the ones you like.</p>
         </div>
         {generation.status !== "completed" && !working && generation.canStart && (
           <button
@@ -67,16 +66,14 @@ export function VideoClips({
           </button>
         )}
       </div>
-      <p className="transcript-message" role="status">
+      {generation.status !== "completed" && <p className="transcript-message" role="status">
         {generation.message ??
           (!generation.enabled
             ? "Clip creation isn’t configured on this server yet."
-              : generation.status === "completed"
-                ? "Your clips are ready."
-                : !generation.canStart
+              : !generation.canStart
                 ? "Choose a checked recording with at least 3 seconds of video."
-                : "Create your clips in one step. Transcription and highlight selection are included.")}
-      </p>
+                : "Ready to create clips.")}
+      </p>}
       {error && (
         <p className="form-alert" role="alert">
           {error}

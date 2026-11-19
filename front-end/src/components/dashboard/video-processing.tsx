@@ -48,8 +48,8 @@ export function VideoProcessing({ video }: { video: Video }) {
       <ProcessingProgress step={step} title={title} detail={detail} phases={phases}
         startedAt={video.processingStartedAt ?? video.createdAt}
         label="Clip creation steps"
-        completionNote="Your clips will appear here automatically. No extra steps needed."
-        slowNote="Longer recordings can take several minutes. You can return to this video from My videos." />
+        completionNote="You can leave this page."
+        slowNote="Long videos take longer. Check back in My videos." />
     </div>
   );
 }

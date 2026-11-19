@@ -31,7 +31,7 @@ export function RenderOptionsFields({
       </label>
       <fieldset className="caption-choice">
         <legend>
-          Generated captions <span>(choose one)</span>
+          Captions
         </legend>
         <label>
           <input
@@ -53,13 +53,11 @@ export function RenderOptionsFields({
             checked={value.captions === "no"}
             onChange={() => onChange({ ...value, captions: "no" })}
           />{" "}
-          No added captions
+          No captions
         </label>
       </fieldset>
       <p className="field-hint">
-        The video fills the selected shape by cropping. Captions already baked
-        into the source remain visible. Export detail depends on your original
-        video.
+        Cropped to fit. Subtitles in the original video stay visible.
       </p>
     </fieldset>
   );

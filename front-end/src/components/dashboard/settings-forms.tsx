@@ -52,13 +52,12 @@ function ProfileForm({ user }: { user: User }) {
     <section className="settings-panel">
       <div className="settings-panel-heading">
         <h2>Your profile</h2>
-        <p>A familiar name for your creative space.</p>
       </div>
       <div className="profile-identity">
         <UserAvatar name={user.name} image={user.image} size="profile" />
         <div>
           <strong>{user.name}</strong>
-          <p>Google profile photos update when you sign in with Google.</p>
+          <p>{user.email}</p>
         </div>
       </div>
       <ClientForm

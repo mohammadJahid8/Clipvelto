@@ -23,7 +23,6 @@ export default async function VideosPage({
       <div className="dashboard-page-heading">
         <div>
           <h1>My videos</h1>
-          <p>Your recordings, their progress, and what comes next.</p>
         </div>
         <UploadVideoButton />
       </div>
@@ -32,14 +31,7 @@ export default async function VideosPage({
           That page link wasn’t valid. Showing your latest videos.
         </p>
       )}
-      <section className="workspace-panel">
-        <div className="panel-heading">
-          <div>
-            <h2>Your video library</h2>
-            <p>Only videos belonging to your account appear here.</p>
-          </div>
-          <span className="coming-tag">Private source videos</span>
-        </div>
+      <section className="workspace-panel" aria-label="Video library">
         <VideoList videos={page.videos} />
       </section>
       {(cursor || page.nextCursor) && (

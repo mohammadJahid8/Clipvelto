@@ -22,6 +22,7 @@ import { FormField } from "@/components/ui/form-field";
 import { clientApi } from "@/lib/client-api";
 import { videoResponseSchema } from "@/lib/video-schema";
 import { RenderOptionsFields } from "./render-options-fields";
+import { WorkspaceHelp } from "./workspace-help";
 import {
   initialRenderOptions,
   renderOptionsPayload,
@@ -131,16 +132,7 @@ function YoutubeImportForm() {
     };
   }, []);
   return (
-    <section className="workspace-panel">
-      <div className="panel-heading">
-        <div>
-          <h2>Start with a YouTube link.</h2>
-          <p>
-            Import a video, a finished stream, or a short window from a stream
-            that is live now.
-          </p>
-        </div>
-      </div>
+    <section className="workspace-panel" aria-label="YouTube import">
       <ClientForm
         className="video-upload-form"
         noValidate
@@ -172,7 +164,7 @@ function YoutubeImportForm() {
             }
             if (insufficientCredits) {
               setError(
-                "Your available credits don’t cover this video. Wait for a failed job’s reservation to return, or add credits.",
+                "Not enough available credits for this video. Add credits to continue.",
               );
               return;
             }
@@ -194,13 +186,14 @@ function YoutubeImportForm() {
         })}
       >
         <FormField
-          label="YouTube video or livestream URL"
+          label="YouTube link"
           type="url"
           disabled={isSubmitting}
           placeholder="https://www.youtube.com/watch?v=…"
           {...register("url")}
           error={errors.url?.message}
         />
+        <WorkspaceHelp title={`Live stream settings · ${Number(currentCapture) / 60} min`}>
         <div className="form-field">
           <label htmlFor="live-capture-length">Live capture length</label>
           <select
@@ -215,10 +208,10 @@ function YoutubeImportForm() {
             ))}
           </select>
           <p className="field-hint">
-            For active streams, recording starts when your queued job begins.
-            Finished videos are imported in full when your credits cover them.
+            Only for streams that are live now. Capture starts when processing begins.
           </p>
         </div>
+        </WorkspaceHelp>
         <RenderOptionsFields
           value={renderOptions}
           onChange={setRenderOptions}
@@ -248,14 +241,12 @@ function YoutubeImportForm() {
         )}
         {config && config.importMaxSeconds < 3 && (
           <p role="status">
-            Add credits to create more clips. Your saved clips are still
-            available. <Link href="/dashboard/billing">Add credits</Link>
+            No credits available. <Link href="/dashboard/billing">Add credits</Link>
           </p>
         )}
         {config && !config.youtubeEnabled && (
           <p role="status">
-            YouTube importing isn’t configured on this server yet. You can
-            upload a file from your device.
+            YouTube imports are unavailable. Upload from your device instead.
           </p>
         )}
         {error && (
@@ -267,7 +258,7 @@ function YoutubeImportForm() {
           </p>
         )}
         {quote && (
-          <div className="billing-test-note">
+          <div className="upload-quote">
             <div>
               <strong>{quote.title}</strong>
               <p>
@@ -277,12 +268,9 @@ function YoutubeImportForm() {
                   ? "Administrator: no charge"
                   : `${Number(quote.credits.toFixed(2))} ${quote.mode === "test" ? "test " : ""}credits estimated`}
               </p>
-              <p>
-                We verify the recording’s actual size and duration before
-                transcription.{" "}
-                {quote.available !== null &&
-                  `${Number(quote.available.toFixed(2))} credits available.`}
-              </p>
+              {quote.available !== null && (
+                <p>{Number(quote.available.toFixed(2))} credits available</p>
+              )}
               {!quote.admin && (quote.available ?? 0) < quote.credits && (
                 <Link href="/dashboard/billing">
                   Add credits before importing
@@ -310,19 +298,13 @@ function YoutubeImportForm() {
               ? "Confirm & create clips"
               : "Check video & credits"}
         </button>
-        <p className="billing-help">
-          One credit covers one source minute, minimum 1 credit. We reserve
-          credits for the full recording before downloading. Larger files have a
-          storage minimum of 2 credits per GB for 30 days; the higher quote
-          applies. Submitted jobs can’t be cancelled. You can delete videos
-          after clip generation finishes. Failed processing returns the
-          reservation. <Link href="/dashboard/billing">View credit packs</Link>
-        </p>
-        <p className="upload-phase-note">
-          Private, age-restricted, members-only, unavailable, or YouTube-blocked
-          videos may not import. Playlists and channels aren’t supported. You
-          can always upload your own recording from a device.
-        </p>
+        <p className="field-hint upload-commit-note">Submitted jobs can’t be cancelled.</p>
+        <WorkspaceHelp title="Credits & import details">
+          <p>1 credit per video minute, minimum 1 credit. Large files have a minimum of 2 credits per GB; the higher quote applies.</p>
+          <p>Credits are reserved before import and returned if processing fails. Generated clips are kept for 30 days; originals are removed after completion.</p>
+          <p>Restricted or YouTube-blocked videos may not import. Playlists and channels aren’t supported.</p>
+          <Link href="/dashboard/billing">View credits</Link>
+        </WorkspaceHelp>
       </ClientForm>
     </section>
   );

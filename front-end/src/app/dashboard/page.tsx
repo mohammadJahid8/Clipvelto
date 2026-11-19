@@ -41,7 +41,6 @@ export default async function DashboardPage({
       <div className="dashboard-page-heading">
         <div>
           <h1>Welcome, {user.name.split(" ")[0]}.</h1>
-          <p>Upload a video or import a YouTube link to create clips.</p>
         </div>
         <UploadVideoButton />
       </div>
@@ -55,7 +54,6 @@ export default async function DashboardPage({
             <Film size={19} aria-hidden="true" />
           </div>
           <strong>{summary.videos}</strong>
-          <p>Uploaded and imported videos</p>
         </article>
         <article className="stat-card">
           <div>
@@ -63,7 +61,6 @@ export default async function DashboardPage({
             <Timer size={19} aria-hidden="true" />
           </div>
           <strong>{summary.processing}</strong>
-          <p>Videos being processed</p>
         </article>
         <article className="stat-card">
           <div>
@@ -75,11 +72,10 @@ export default async function DashboardPage({
               ? "Unlimited"
               : Number((summary.credits.available ?? 0).toFixed(2))}
           </strong>
-          <p>
-            {summary.credits.status === "unlimited"
-              ? "No credit limit for administrators"
-              : `${Number(summary.credits.reserved.toFixed(2))} reserved · ${Number(summary.credits.used.toFixed(2))} used`}
-          </p>
+          {summary.credits.reserved > 0 && (
+            <p>{Number(summary.credits.reserved.toFixed(2))} reserved</p>
+          )}
+          <Link className="stat-card-link" href="/dashboard/billing">View credits</Link>
         </article>
       </section>
       <section className="workspace-panel">

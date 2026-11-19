@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Film, Upload } from "lucide-react";
+import { Film } from "lucide-react";
 import type { Video } from "@/lib/server-api";
 import { UploadVideoButton } from "./upload-video-button";
 import { VideoStatusRefresh } from "./video-status-refresh";
@@ -32,16 +32,9 @@ export function VideoList({
         <div className="empty-state-icon">
           <Film size={28} strokeWidth={1.4} aria-hidden="true" />
         </div>
-        <h3>Your story starts with a video.</h3>
-        <p>
-          Upload your first recording to save it privately and check its format
-          and duration, or start with a YouTube link.
-        </p>
+        <h3>No videos yet</h3>
+        <p>Add a YouTube link or upload a video to create clips.</p>
         <UploadVideoButton />
-        <span className="empty-state-note">
-          <Upload size={13} aria-hidden="true" />
-          MP4, MOV, and WebM supported
-        </span>
       </div>
     );
   return (
@@ -74,10 +67,18 @@ export function VideoList({
             <h3>
               <Link href={`/dashboard/videos/${video.id}`}>{video.title}</Link>
             </h3>
-            <p>{video.originalFilename}</p>
+            {video.durationSeconds !== null && (
+              <p>{Math.floor(video.durationSeconds / 60)}m {Math.round(video.durationSeconds % 60)}s</p>
+            )}
           </div>
           <span className={`video-status video-status-${video.status}`}>
-            {video.status === "ready" &&
+            {video.generation.status === "completed"
+              ? "Clips ready"
+              : video.generation.status === "failed"
+                ? "Needs attention"
+                : ["queued", "processing"].includes(video.generation.status)
+                  ? "Creating clips"
+                  : video.status === "ready" &&
             video.transcription.status !== "not_started"
               ? {
                   queued: "Transcript queued",

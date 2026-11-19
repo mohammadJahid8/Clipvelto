@@ -23,6 +23,7 @@ import {
   type BillingOrder,
 } from "@/lib/billing-schema";
 import { CreditPackCards } from "./credit-pack-cards";
+import { WorkspaceHelp } from "@/components/dashboard/workspace-help";
 
 const number = (value: number) =>
   Number(value.toFixed(2)).toLocaleString("en-US");
@@ -386,19 +387,18 @@ export function BillingWorkspace({ initial }: { initial: Billing }) {
           {data.pendingRemovals === 1
             ? "A video is"
             : `${data.pendingRemovals} videos are`}{" "}
-          being deleted. Stored files are removed in the background. Used
-          credits are not refunded.
+          being deleted. Used credits are not refunded.
         </p>
       )}
-      <p className="billing-help">
-        {data.credits.role === "admin"
-          ? "Administrator processing is exempt from credit charges. "
-          : "Your account starts with 15 free credits, including any homepage trial. "}
-        We reserve the quoted credits before processing, charge when clips are
-        ready, and return the reservation if processing fails. Submitted jobs
-        can’t be cancelled. You can delete completed videos; used credits are
-        not refunded.
-      </p>
+      <p className="billing-help">1 credit = 1 video minute. Purchased credits never expire.</p>
+      <WorkspaceHelp title="How credits work">
+        <p>{data.credits.role === "admin"
+          ? "Administrators aren’t charged for processing."
+          : "Your 15 free credits include any homepage trial usage."}</p>
+        <p>We reserve the quote before processing and charge when clips are ready. If processing fails, reserved credits return to your balance.</p>
+        <p>Minimum 1 credit per video. Large files have a minimum of 2 credits per GB; the higher quote applies. Previews and downloads cost nothing extra.</p>
+        <p>Submitted jobs can’t be cancelled. Deleting completed videos doesn’t refund used credits. Clips are kept for 30 days; originals are removed after completion.</p>
+      </WorkspaceHelp>
       {notice && (
         <p role="status" className="billing-notice">
           {confirming ? (
@@ -417,26 +417,14 @@ export function BillingWorkspace({ initial }: { initial: Billing }) {
         </p>
       )}
       <section className="billing-packs" aria-labelledby="packs-title">
-        <h2 id="packs-title">Choose your credit pack</h2>
-        <p>
-          Every pack includes the same features. Larger packs cost less per
-          minute.
-        </p>
+        <h2 id="packs-title">Add credits</h2>
         <CreditPackCards
           onChoose={choose}
           disabled={busy || !data.checkout.enabled || data.paymentReview}
         />
-        <p className="billing-help">
-          1 credit covers 1 source-video minute, measured in seconds, with a
-          1-credit minimum per video. Large files have a storage minimum of 2
-          credits per GB for 30 days; the higher quote applies. Previews and
-          downloads cost nothing extra. Purchased credits never expire. New
-          media is kept for 30 days.
-        </p>
         {data.checkout.provider === "paddle" && (
           <p className="billing-help">
-            Secure checkout by Paddle. Applicable tax is added at checkout.
-            You’ll see the final total before paying.
+            Secure checkout by Paddle. Applicable tax is shown before payment.
           </p>
         )}
         {!data.checkout.enabled && (
@@ -536,10 +524,6 @@ export function BillingWorkspace({ initial }: { initial: Billing }) {
       </section>
       <section className="workspace-panel billing-history">
         <h2>Credit activity</h2>
-        <p>
-          Reservations are temporary holds. Returned credits become available
-          again.
-        </p>
         {data.ledger.length ? (
           <ul>
             {data.ledger.map((item) => (

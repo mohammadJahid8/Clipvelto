@@ -10,7 +10,6 @@ export default async function SettingsPage() {
       <div className="dashboard-page-heading">
         <div>
           <h1>Account settings</h1>
-          <p>Your details. Your security. All in one place.</p>
         </div>
       </div>
       <SettingsForms user={user} />

@@ -67,6 +67,24 @@
   flex-wrap: wrap;
   gap: 12px;
 }
+.upload-quote {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--accent-subtle);
+  font-size: .875rem;
+  line-height: 1.6;
+}
+.upload-quote strong { color: var(--foreground); }
+.upload-quote p { margin: 4px 0 0; color: var(--muted); }
+.video-upload-form > .upload-commit-note { margin-top: -12px; }
+.video-upload-form > .workspace-help:last-child {
+  border-top: 1px solid var(--border);
+}
 .upload-phase-note {
   color: var(--muted);
   font-size: .875rem;
@@ -198,6 +216,8 @@
   margin: 11px 0 0;
   font-size: 1rem;
 }
+.workspace-help-content .video-metadata { margin: 0; }
+.workspace-help-content .video-metadata > div { padding: 14px; }
 .video-detail-actions {
   display: flex;
   align-items: center;

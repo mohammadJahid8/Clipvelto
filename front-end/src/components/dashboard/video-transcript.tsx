@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, FileText } from "lucide-react";
 import { z } from "zod";
 import { clientApi } from "@/lib/client-api";
+import { WorkspaceHelp } from "./workspace-help";
 import {
   transcriptResponseSchema,
   type Video,
@@ -51,7 +52,6 @@ export function VideoTranscript({
             <FileText size={21} aria-hidden="true" />
             Transcript
           </h2>
-          <p>Read or download the speech from your video.</p>
         </div>
       </div>
       {status === "completed" && !transcript && !error && (
@@ -73,7 +73,6 @@ export function VideoTranscript({
       {transcript && transcript.segments.length > 0 && (
         <>
           <div className="transcript-downloads">
-            <span>Detected language: {transcript.language}</span>
             <a
               className="button button-secondary"
               href={`/api/v1/videos/${video.id}/transcript?format=txt`}
@@ -91,10 +90,7 @@ export function VideoTranscript({
               Download subtitles
             </a>
           </div>
-          <p className="muted">
-            Automatic transcription can make mistakes. Review names and
-            important details.
-          </p>
+          <WorkspaceHelp title="Read transcript">
           <ol
             className="transcript-segments"
             aria-label="Timestamped transcript"
@@ -119,6 +115,7 @@ export function VideoTranscript({
               Show more transcript
             </button>
           )}
+          </WorkspaceHelp>
         </>
       )}
     </section>
